@@ -139,24 +139,18 @@ class Decoder_Transformer(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
     def generate_mask(self, src):
-        # Generate a mask for non-zero elements.
-        src_mask = (
-            src.squeeze(-1) != 0
-        )  # Assuming 0 represents padding. Shape: [batch_size, sequence_length]
+        batch_size, seq_length = src.size(0), src.size(1)
 
-        # Add two dimensions to the mask: one for the head and one for the sequence length
-        # This will allow the mask to be broadcasted properly during the attention operation.
-        # Final shape: [batch_size, 1, sequence_length, sequence_length]
-        src_mask = src_mask.unsqueeze(1).unsqueeze(
-            2
-        )  # Shape: [batch_size, 1, 1, sequence_length]
+        # Create a mask of shape [seq_length, seq_length] with ones below and including the diagonal, zeros above
+        mask = torch.triu(torch.ones(seq_length, seq_length), diagonal=1).bool()
 
-        # Repeat mask for the sequence length on the 3rd dimension
-        src_mask = src_mask.repeat(
-            1, 1, src.size(1), 1
-        )  # Shape: [batch_size, 1, sequence_length, sequence_length]
+        # Invert the mask to have zeros below and including the diagonal, ones above
+        mask = ~mask
 
-        return src_mask
+        # Expand the mask for the batch size. Shape: [batch_size, 1, seq_length, seq_length]
+        mask = mask.unsqueeze(0).expand(batch_size, -1, -1, -1)
+
+        return mask
 
     def forward(self, src):
         src_mask = self.generate_mask(src)
@@ -181,7 +175,10 @@ class Decoder_Transformer(nn.Module):
             output = self.forward(current_input)
 
             # Get the last output (most recent forecast)
-            next_output = output[:, -1, 0].unsqueeze(1)
+            next_output = torch.normal(
+                mean=output[:, -1, 0].unsqueeze(1),
+                std=torch.abs(output[:, -1, 1]).unsqueeze(1),
+            )
 
             # Append the predicted value to the generated sequence
             generated_sequence.append(next_output[:, 0])  # Assuming output_size is 1
