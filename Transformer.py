@@ -66,6 +66,7 @@ class MultiHeadAttention(nn.Module):
         attn_output = self.scaled_dot_product_attention(Q, K, V, mask)
 
         # Combine heads and apply output transformation
+
         output = self.W_o(self.combine_heads(attn_output))
 
         return output
@@ -106,15 +107,22 @@ class DecoderLayer(nn.Module):
         super(DecoderLayer, self).__init__()
         self.self_attn = MultiHeadAttention(d_model, num_heads)
         self.feed_forward = PositionWiseFeedForward(d_model, d_ff)
-        self.norm1 = nn.LayerNorm(d_model)
-        self.norm2 = nn.LayerNorm(d_model)
+        # self.norm1 = nn.LayerNorm(d_model)
+        # self.norm2 = nn.LayerNorm(d_model)
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x, src_mask):
+        # print("x", x)
         attn_output = self.self_attn(x, x, x, src_mask)
-        x = self.norm1(x + self.dropout(attn_output))
+        # print("attention", (x + self.dropout(attn_output)).shape)
+        # x = self.norm1(x + self.dropout(attn_output))
+        x = x + self.dropout(attn_output)
+        # print("norm1", x)
         ff_output = self.feed_forward(x)
-        x = self.norm2(x + self.dropout(ff_output))
+        # print("ff", ff_output)
+        # x = self.norm2(x + self.dropout(ff_output))
+        x = x + self.dropout(ff_output)
+        # print("norm2", x)
         return x
 
 
@@ -141,11 +149,8 @@ class Decoder_Transformer(nn.Module):
     def generate_mask(self, src):
         batch_size, seq_length = src.size(0), src.size(1)
 
-        # Create a mask of shape [seq_length, seq_length] with ones below and including the diagonal, zeros above
-        mask = torch.triu(torch.ones(seq_length, seq_length), diagonal=1).bool()
-
-        # Invert the mask to have zeros below and including the diagonal, ones above
-        mask = ~mask
+        # Create a mask of shape [seq_length, seq_length] with ones above
+        mask = torch.triu(torch.ones(seq_length, seq_length), diagonal=1)
 
         # Expand the mask for the batch size. Shape: [batch_size, 1, seq_length, seq_length]
         mask = mask.unsqueeze(0).expand(batch_size, -1, -1, -1)
@@ -154,10 +159,11 @@ class Decoder_Transformer(nn.Module):
 
     def forward(self, src):
         src_mask = self.generate_mask(src)
-        src = self.positional_encoding(src)
-        src = self.dropout(src)
+        # src = self.positional_encoding(src)
+        # src = self.dropout(src)
 
         for dec_layer in self.decoder_layers:
+            # print(src.shape, src)
             src = dec_layer(src, src_mask)
 
         output = self.fc(src)
@@ -177,7 +183,7 @@ class Decoder_Transformer(nn.Module):
             # Get the last output (most recent forecast)
             next_output = torch.normal(
                 mean=output[:, -1, 0].unsqueeze(1),
-                std=torch.abs(output[:, -1, 1]).unsqueeze(1),
+                std=torch.abs(output[:, -1, 1]).unsqueeze(1) + 1e-8,
             )
 
             # Append the predicted value to the generated sequence
@@ -198,3 +204,35 @@ class Decoder_Transformer(nn.Module):
         )  # Shape: [batch_size, n_sequence]
 
         return sequence
+
+
+class MLP(nn.Module):
+    def __init__(self, input_size, hidden_size, output_size):
+        super(MLP, self).__init__()
+        self.fc1 = nn.Linear(input_size, hidden_size)
+        self.fc2 = nn.Linear(hidden_size, hidden_size)
+        self.fc3 = nn.Linear(hidden_size, hidden_size)
+        self.fc4 = nn.Linear(hidden_size, output_size)
+        self.relu = nn.ReLU()
+
+    def forward(self, x):
+        x = self.relu(self.fc1(x))
+        x = self.relu(self.fc2(x))
+        x = self.relu(self.fc3(x))
+        return self.fc4(x)
+
+    def generate(self, start, n_sequence):
+        # Generate the next n_sequence elements
+        generated_sequence = []
+
+        for _ in range(n_sequence):
+            # Pass the current input through the model
+            output = self.forward(start)
+
+            # Append the predicted value to the generated sequence
+            generated_sequence.append(output)
+
+            # Concatenate the new output to the current input for the next iteration
+            start = torch.cat((start[:, 1:], output), dim=1)
+
+        return torch.stack(generated_sequence, dim=1)
