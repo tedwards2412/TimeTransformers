@@ -146,11 +146,26 @@ class Decoder_Transformer(nn.Module):
         self.fc = nn.Linear(d_model, output_size)
         self.dropout = nn.Dropout(dropout)
 
+    # def generate_mask(self, src):
+    #     batch_size, seq_length = src.size(0), src.size(1)
+
+    #     # Create a mask of shape [seq_length, seq_length] with ones above
+    #     mask = torch.triu(torch.ones(seq_length, seq_length), diagonal=1).bool()
+
+    #     # Expand the mask for the batch size. Shape: [batch_size, 1, seq_length, seq_length]
+    #     mask = mask.unsqueeze(0).expand(batch_size, -1, -1, -1)
+
+    #     return mask
+
     def generate_mask(self, src):
+        # According to chatGPT, you need to invert the mask
         batch_size, seq_length = src.size(0), src.size(1)
 
-        # Create a mask of shape [seq_length, seq_length] with ones above
-        mask = torch.triu(torch.ones(seq_length, seq_length), diagonal=1)
+        # Create a mask of shape [seq_length, seq_length] with ones below and including the diagonal, zeros above
+        mask = torch.triu(torch.ones(seq_length, seq_length), diagonal=1).bool()
+
+        # Invert the mask to have zeros below and including the diagonal, ones above
+        mask = ~mask
 
         # Expand the mask for the batch size. Shape: [batch_size, 1, seq_length, seq_length]
         mask = mask.unsqueeze(0).expand(batch_size, -1, -1, -1)
