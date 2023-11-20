@@ -83,6 +83,18 @@ class PositionWiseFeedForward(nn.Module):
         return self.fc2(self.relu(self.fc1(x)))
 
 
+class LearnedPositionalEncoding(nn.Module):
+    def __init__(self, d_model, max_seq_length):
+        super(LearnedPositionalEncoding, self).__init__()
+        # Create a learnable positional embedding
+        self.pe = nn.Parameter(torch.zeros(1, max_seq_length, d_model))
+
+    def forward(self, x):
+        # Add the positional encoding to the input
+        x = x + self.pe[:, : x.size(1)]
+        return x
+
+
 class PositionalEncoding(nn.Module):
     def __init__(self, d_model, max_seq_length):
         super(PositionalEncoding, self).__init__()
@@ -141,9 +153,12 @@ class Decoder_Transformer(nn.Module):
         super(Decoder_Transformer, self).__init__()
         self.device = device
         self.max_seq_length = max_seq_length
-        self.positional_encoding = PositionalEncoding(d_model, max_seq_length).to(
-            device
-        )
+        # self.positional_encoding = PositionalEncoding(d_model, max_seq_length).to(
+        #     device
+        # )
+        self.positional_encoding = LearnedPositionalEncoding(
+            d_model, max_seq_length
+        ).to(device)
         self.decoder_layers = nn.ModuleList(
             [
                 DecoderLayer(d_model, num_heads, d_ff, dropout).to(device)
@@ -153,34 +168,36 @@ class Decoder_Transformer(nn.Module):
         self.fc = nn.Linear(d_model, output_size).to(device)
         self.dropout = nn.Dropout(dropout).to(device)
 
-    # def generate_mask(self, src):
-    #     batch_size, seq_length = src.size(0), src.size(1)
-
-    #     # Create a mask of shape [seq_length, seq_length] with ones above
-    #     mask = torch.triu(torch.ones(seq_length, seq_length), diagonal=1).bool()
-
-    #     # Expand the mask for the batch size. Shape: [batch_size, 1, seq_length, seq_length]
-    #     mask = mask.unsqueeze(0).expand(batch_size, -1, -1, -1)
-
-    #     return mask
-
     def generate_mask(self, src):
-        # According to chatGPT, you need to invert the mask
         batch_size, seq_length = src.size(0), src.size(1)
 
-        # Create a mask of shape [seq_length, seq_length] with ones above
-        mask = torch.triu(
-            torch.ones(seq_length, seq_length).to(self.device), diagonal=1
-        ).to(self.device)
+        # Create a mask of shape [seq_length, seq_length] with zeros above the diagonal and ones on and below
+        mask = torch.tril(torch.ones(seq_length, seq_length, dtype=torch.bool)).to(
+            self.device
+        )
 
         # Expand the mask for the batch size. Shape: [batch_size, 1, seq_length, seq_length]
         mask = mask.unsqueeze(0).expand(batch_size, -1, -1, -1)
 
         return mask
 
+    # def generate_mask(self, src):
+    #     # According to chatGPT, you need to invert the mask
+    #     batch_size, seq_length = src.size(0), src.size(1)
+
+    #     # Create a mask of shape [seq_length, seq_length] with ones above
+    #     mask = torch.triu(
+    #         torch.ones(seq_length, seq_length).to(self.device), diagonal=1
+    #     ).to(self.device)
+
+    #     # Expand the mask for the batch size. Shape: [batch_size, 1, seq_length, seq_length]
+    #     mask = mask.unsqueeze(0).expand(batch_size, -1, -1, -1)
+
+    #     return mask
+
     def forward(self, src):
         src_mask = self.generate_mask(src)
-        # src = self.positional_encoding(src)
+        src = self.positional_encoding(src)
         # src = self.dropout(src)
 
         for dec_layer in self.decoder_layers:
