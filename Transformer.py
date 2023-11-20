@@ -136,21 +136,23 @@ class Decoder_Transformer(nn.Module):
         d_ff,
         max_seq_length,
         dropout,
+        device=torch.device("cpu")
     ):
         super(Decoder_Transformer, self).__init__()
+        self.device=device
         self.max_seq_length = max_seq_length
-        self.positional_encoding = PositionalEncoding(d_model, max_seq_length)
+        self.positional_encoding = PositionalEncoding(d_model, max_seq_length).to(device)
         self.decoder_layers = nn.ModuleList(
-            [DecoderLayer(d_model, num_heads, d_ff, dropout) for _ in range(num_layers)]
+            [DecoderLayer(d_model, num_heads, d_ff, dropout).to(device) for _ in range(num_layers)]
         )
-        self.fc = nn.Linear(d_model, output_size)
-        self.dropout = nn.Dropout(dropout)
+        self.fc = nn.Linear(d_model, output_size).to(device)
+        self.dropout = nn.Dropout(dropout).to(device)
 
     def generate_mask(self, src):
         batch_size, seq_length = src.size(0), src.size(1)
 
         # Create a mask of shape [seq_length, seq_length] with ones above
-        mask = torch.triu(torch.ones(seq_length, seq_length), diagonal=1)
+        mask = torch.triu(torch.ones(seq_length, seq_length).to(self.device), diagonal=1).to(self.device)
 
         # Expand the mask for the batch size. Shape: [batch_size, 1, seq_length, seq_length]
         mask = mask.unsqueeze(0).expand(batch_size, -1, -1, -1)
@@ -183,7 +185,7 @@ class Decoder_Transformer(nn.Module):
             # Get the last output (most recent forecast)
             next_output = torch.normal(
                 mean=output[:, -1, 0].unsqueeze(1),
-                std=torch.abs(output[:, -1, 1]).unsqueeze(1) + 1e-8,
+                std=torch.nn.functional.softplus(output[:, -1, 1]).unsqueeze(1) + 1e-6,
             )
 
             # Append the predicted value to the generated sequence
