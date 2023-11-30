@@ -80,7 +80,7 @@ class PositionWiseFeedForward(nn.Module):
         self.relu = nn.ReLU()
 
     def forward(self, x):
-        return self.fc2(self.relu(self.fc1(x)))
+        return self.relu(self.fc2(self.relu(self.fc1(x))))
 
 
 class LearnedPositionalEncoding(nn.Module):
@@ -124,17 +124,12 @@ class DecoderLayer(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x, src_mask):
-        # print("x", x)
         attn_output = self.self_attn(x, x, x, src_mask)
-        # print("attention", (x + self.dropout(attn_output)).shape)
         # x = self.norm1(x + self.dropout(attn_output))
         x = x + self.dropout(attn_output)
-        # print("norm1", x)
         ff_output = self.feed_forward(x)
-        # print("ff", ff_output)
         # x = self.norm2(x + self.dropout(ff_output))
         x = x + self.dropout(ff_output)
-        # print("norm2", x)
         return x
 
 
@@ -156,6 +151,7 @@ class Decoder_Transformer(nn.Module):
         # self.positional_encoding = PositionalEncoding(d_model, max_seq_length).to(
         #     device
         # )
+        self.embedding_layer = nn.Linear(1, d_model).to(device)
         self.positional_encoding = LearnedPositionalEncoding(
             d_model, max_seq_length
         ).to(device)
@@ -197,11 +193,11 @@ class Decoder_Transformer(nn.Module):
 
     def forward(self, src):
         src_mask = self.generate_mask(src)
+        src = self.embedding_layer(src)
         src = self.positional_encoding(src)
         # src = self.dropout(src)
 
         for dec_layer in self.decoder_layers:
-            # print(src.shape, src)
             src = dec_layer(src, src_mask)
 
         output = self.fc(src)
