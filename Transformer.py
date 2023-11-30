@@ -217,7 +217,9 @@ class Decoder_Transformer(nn.Module):
             # Get the last output (most recent forecast)
             next_output = torch.normal(
                 mean=output[:, -1, 0].unsqueeze(1),
-                std=torch.nn.functional.softplus(output[:, -1, 1]).unsqueeze(1) + 1e-6,
+                std=torch.sqrt(
+                    torch.nn.functional.softplus(output[:, -1, 1]).unsqueeze(1) + 1e-6,
+                ),
             )
 
             # Append the predicted value to the generated sequence
