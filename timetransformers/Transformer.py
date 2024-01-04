@@ -19,21 +19,6 @@ class MultiHeadAttention(nn.Module):
         self.W_v = nn.Linear(d_model, d_model)
         self.W_o = nn.Linear(d_model, d_model)
 
-    # def scaled_dot_product_attention(self, Q, K, V, mask=None):
-    #     # Calculate attention scores
-    #     attn_scores = torch.matmul(Q, K.transpose(-2, -1)) / math.sqrt(self.d_k)
-
-    #     # Apply mask if provided (useful for preventing attention to certain parts like padding)
-    #     if mask is not None:
-    #         attn_scores = attn_scores.masked_fill(mask == 0, -1e9)
-
-    #     # Softmax is applied to obtain attention probabilities
-    #     attn_probs = torch.softmax(attn_scores, dim=-1)
-
-    #     # Multiply by values to obtain the final output
-    #     output = torch.matmul(attn_probs, V)
-    #     return output
-
     def split_heads(self, x):
         # Adjust to handle d_model = 1
         if self.d_model == 1:

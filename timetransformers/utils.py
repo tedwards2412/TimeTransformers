@@ -1,7 +1,9 @@
 import os
 from datetime import datetime
 from distutils.util import strtobool
-
+import torch
+import numpy as np
+from scipy.stats import norm
 
 import pandas as pd
 
@@ -155,3 +157,44 @@ def convert_tsf_to_dataframe(
             contain_missing_values,
             contain_equal_length,
         )
+
+
+def convert_df_to_numpy(dfs, train_split=0.8):
+    training_data = []
+    test_data = []
+
+    for df in dfs:
+        # Select the 'series_value' column from the filtered DataFrame
+        selected_series_values = df["series_value"]
+
+        # T_means_ = df[df["obs_or_fcst"] == ("T_MEAN", "PRCP_SUM")]["series_value"]
+        selected_series_values = selected_series_values.to_numpy()
+
+        def fill_nans(array):
+            array = pd.Series(array)
+            array.ffill(inplace=True)  # Forward fill
+            array.bfill(inplace=True)
+            return array.to_numpy()
+
+        N_data = selected_series_values.shape[0]
+
+        for i in range(N_data):
+            new_data = fill_nans(selected_series_values[i].to_numpy().astype(float))
+            new_data_length = new_data.shape[0]
+            training_data.append(new_data[: int(train_split * new_data_length)])
+            test_data.append(new_data[int(train_split * new_data_length) :])
+
+    return training_data, test_data
+
+
+def PIT(transformer_pred, y_true):
+    mean = transformer_pred[:, :, 0].cpu().detach().numpy()
+    var = torch.nn.functional.softplus(transformer_pred[:, :, 1])
+    std = np.sqrt(var.cpu().detach().numpy())
+
+    U = norm.cdf(
+        y_true.cpu().detach().numpy(),
+        loc=mean,
+        scale=std,
+    )
+    return U
