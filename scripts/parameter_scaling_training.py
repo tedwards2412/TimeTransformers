@@ -49,8 +49,8 @@ def train():
     output_dim = 2  # To begin with we can use a Gaussian with mean and variance
     d_model = 8
     num_heads = 4
-    num_layers = 2
-    d_ff = 64
+    num_layers = 1
+    d_ff = 32
     dropout = 0.0
 
     # First lets download the data and make a data loader
@@ -96,6 +96,8 @@ def train():
         dropout,
         device=device,
     ).to(device)
+    num_params = sum(p.numel() for p in transformer.parameters() if p.requires_grad)
+    print("Number of parameters: ", num_params)
 
     # Now lets train it!
 
@@ -171,7 +173,6 @@ def train():
     # plt.savefig("loss.pdf", bbox_inches="tight")
 
     # Finally, lets save the losses
-    num_params = sum(p.numel() for p in transformer.parameters() if p.requires_grad)
     file_name = f"results/transformer_{num_params}_training.json"
     model_info = {
         "num_params": num_params,
