@@ -152,18 +152,49 @@ class Decoder_Transformer(nn.Module):
         self.fc = nn.Linear(d_model, output_size).to(device)
         self.dropout = nn.Dropout(dropout).to(device)
 
-    def generate_mask(self, src):
-        batch_size, seq_length = src.size(0), src.size(1)
+    def generate_mask(self, src, custom_mask=None):
+        batch_size, _ = src.size(0), src.size(1)
 
-        # Create a mask of shape [seq_length, seq_length] with zeros above the diagonal and ones on and below
-        mask = torch.tril(torch.ones(seq_length, seq_length, dtype=torch.bool)).to(
-            self.device
-        )
+        assert self.max_seq_length == src.size(
+            1
+        ), "Input needs to be the max sequence length"
+
+        # Original mask: zeros above the diagonal, ones on and below
+        mask = torch.tril(
+            torch.ones(self.max_seq_length, self.max_seq_length, dtype=torch.bool)
+        ).to(self.device)
 
         # Expand the mask for the batch size. Shape: [batch_size, 1, seq_length, seq_length]
         mask = mask.unsqueeze(0).expand(batch_size, -1, -1, -1)
 
+        # Combine with custom mask if provided
+        if custom_mask is not None:
+            # Ensure custom_mask is a boolean tensor and has the same device as the original mask
+            custom_mask = custom_mask.to(dtype=torch.bool, device=self.device)
+
+            # Check if custom_mask is of correct shape
+            if custom_mask.size() == (batch_size, self.max_seq_length):
+                # Add a dimension to custom_mask to match the shape of the original mask
+                custom_mask = custom_mask.unsqueeze(1)
+                # Combine masks: element-wise AND operation
+                mask = mask & custom_mask.unsqueeze(-1)
+            else:
+                raise ValueError("Custom mask must have shape [batch_size, seq_length]")
+
         return mask
+
+    # def generate_mask(self, src):
+    #     batch_size, seq_length = src.size(0), src.size(1)
+
+    #     # Create a mask of shape [seq_length, seq_length] with zeros above the diagonal and ones on and below
+    #     mask = torch.tril(torch.ones(seq_length, seq_length, dtype=torch.bool)).to(
+    #         self.device
+    #     )
+
+    #     # Expand the mask for the batch size. Shape: [batch_size, 1, seq_length, seq_length]
+    #     mask = mask.unsqueeze(0).expand(batch_size, -1, -1, -1)
+
+    #     return mask
 
     # def generate_mask(self, src):
     #     # According to chatGPT, you need to invert the mask
