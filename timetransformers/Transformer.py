@@ -49,6 +49,7 @@ class MultiHeadAttention(nn.Module):
 
         # Perform scaled dot-product attention
         # attn_output = self.scaled_dot_product_attention(Q, K, V, mask)
+        # print(mask.sum(axis=-1))
         attn_output = nn.functional.scaled_dot_product_attention(
             Q, K, V, attn_mask=mask
         )
@@ -166,18 +167,23 @@ class Decoder_Transformer(nn.Module):
 
         # Expand the mask for the batch size. Shape: [batch_size, 1, seq_length, seq_length]
         mask = mask.unsqueeze(0).expand(batch_size, -1, -1, -1)
+        # print(mask.shape)
 
         # Combine with custom mask if provided
         if custom_mask is not None:
             # Ensure custom_mask is a boolean tensor and has the same device as the original mask
             custom_mask = custom_mask.to(dtype=torch.bool, device=self.device)
 
-            # Check if custom_mask is of correct shape
+            # # Check if custom_mask is of correct shape
             if custom_mask.size() == (batch_size, self.max_seq_length):
                 # Add a dimension to custom_mask to match the shape of the original mask
-                custom_mask = custom_mask.unsqueeze(1)
-                # Combine masks: element-wise AND operation
-                mask = mask & custom_mask.unsqueeze(-1)
+                custom_mask = (
+                    custom_mask.unsqueeze(1)
+                    .expand(-1, self.max_seq_length, -1)
+                    .unsqueeze(1)
+                )
+                mask = mask & custom_mask
+
             else:
                 raise ValueError("Custom mask must have shape [batch_size, seq_length]")
 
@@ -210,8 +216,8 @@ class Decoder_Transformer(nn.Module):
 
     #     return mask
 
-    def forward(self, src):
-        src_mask = self.generate_mask(src)
+    def forward(self, src, custom_mask=None):
+        src_mask = self.generate_mask(src, custom_mask=custom_mask)
         src = self.embedding_layer(src)
         src = self.positional_encoding(src)
         # src = self.dropout(src)

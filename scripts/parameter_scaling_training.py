@@ -29,6 +29,7 @@ def Gaussian_loss(
     var = torch.nn.functional.softplus(transformer_pred[:, :, 1]) + epsilon
 
     # Calculating the Gaussian negative log-likelihood loss
+    # print(y_true, mean, torch.log(var))
     loss = torch.mean((y_true - mean) ** 2 / var + torch.log(var))
 
     return loss
@@ -36,8 +37,8 @@ def Gaussian_loss(
 
 def train():
     train_split = 0.8
-    max_seq_length = 256
-    batch_size = 256
+    max_seq_length = 512
+    batch_size = 128
     test_batch_size = 1024
     device = torch.device("mps")
     save = False
@@ -47,25 +48,25 @@ def train():
 
     # Transformer parameters
     output_dim = 2  # To begin with we can use a Gaussian with mean and variance
-    d_model = 8
+    d_model = 16
     num_heads = 4
-    num_layers = 1
-    d_ff = 32
+    num_layers = 2
+    d_ff = 16
     dropout = 0.0
 
     # First lets download the data and make a data loader
     print("Downloading data...")
     datasets_to_load = {
-        "oikolab_weather_dataset": "10.5281/zenodo.5184708",
+        # "oikolab_weather_dataset": "10.5281/zenodo.5184708",
         # "covid_deaths_dataset": "10.5281/zenodo.4656009",
         # "us_births_dataset": "10.5281/zenodo.4656049",
-        "solar_4_seconds_dataset": "10.5281/zenodo.4656027",
-        "wind_4_seconds_dataset": "10.5281/zenodo.4656032",
+        # "solar_4_seconds_dataset": "10.5281/zenodo.4656027",
+        # "wind_4_seconds_dataset": "10.5281/zenodo.4656032",
         # "weather_dataset": "10.5281/zenodo.4654822",
         # "hospital_dataset": "10.5281/zenodo.4656014",
         # "electricity_hourly_dataset": "10.5281/zenodo.4656140",
         # "traffic_hourly_dataset": "10.5281/zenodo.4656132",
-        # "rideshare_dataset_without_missing_values": "10.5281/zenodo.5122232",
+        "rideshare_dataset_without_missing_values": "10.5281/zenodo.5122232",
         # "bitcoin_dataset_without_missing_values": "10.5281/zenodo.5122101",
         # "australian_electricity_demand_dataset": "10.5281/zenodo.4659727",
         # "sunspot_dataset_without_missing_values": "10.5281/zenodo.4654722",
@@ -120,10 +121,11 @@ def train():
         transformer.train()
         for batch in train_dataloader:
             train, true, mask = batch
+            # print(train.squeeze(-1), true, mask)
             batched_data = train.to(device)
             batched_data_true = true.to(device)
             optimizer.zero_grad()
-            output = transformer(batched_data)
+            output = transformer(batched_data, custom_mask=mask.to(device))
             loss = Gaussian_loss(output, batched_data_true)
             train_losses.append(loss.item())
             train_epochs.append(e_counter)

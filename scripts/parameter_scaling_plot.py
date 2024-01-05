@@ -2,12 +2,12 @@ import matplotlib.pyplot as plt
 import json
 
 # color_list = ["purple", "#306B37", "darkgoldenrod", "#3F7BB6", "#BF4145", "#CF630A"]
-color_list = ["#2E4854", "#557B82", "#BAB2A9", "#C98769", "#A1553A"]
-ls_list = ["-", "--", "-.", ":", "-"]
+color_list = ["#2E4854", "#557B82", "#BAB2A9", "#C98769", "#A1553A", "darkgoldenrod"]
+ls_list = ["-", "--", "-.", ":", "-", "--"]
 
 
 def plot_loss():
-    parameter_count_list = [2922, 4850, 20146, 165826]
+    parameter_count_list = [1198, 2922, 4850, 7426, 20146, 33570]  # , 165826]
 
     plt.figure(figsize=(8, 6))
 
@@ -40,7 +40,7 @@ def plot_loss():
 
 
 def parameter_scaling_plot():
-    parameter_count_list = [2922, 4850, 20146, 165826]
+    parameter_count_list = [1198, 2922, 4850, 7426, 20146, 33570]  # , 165826]
     min_test_loss = []
 
     for parameter_count in parameter_count_list:

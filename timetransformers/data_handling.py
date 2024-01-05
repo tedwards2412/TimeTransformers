@@ -73,29 +73,28 @@ class TimeSeriesDataset(Dataset):
             return (
                 train_series,
                 true_series,
-                mask,
+                mask.squeeze(-1),
             )
 
         else:
             train_series = torch.tensor(
-                series[: self.max_sequence_length - 1],
+                series[:-1],
                 dtype=torch.float32,
             )
-            true_series = torch.tensor(series[1 : 1 + self.max_sequence_length])
+            true_series = torch.tensor(series[1:], dtype=torch.float32)
 
-            mask = torch.ones(len(true_series) - 1, dtype=torch.bool)
+            mask = torch.ones(len(train_series), dtype=torch.bool)
 
             # Calculate the number of padding elements needed
             padding_length = self.max_sequence_length - len(train_series)
 
             # Create padding tensors
-            train_series_padding = torch.zeros(padding_length)
-            true_series_padding = torch.zeros(padding_length)
-            mask_padding = torch.zeros(padding_length)
+            series_padding = torch.zeros(padding_length)
+            mask_padding = torch.zeros(padding_length, dtype=torch.bool)
 
             # Concatenate the original tensors with their respective paddings
-            train_series = torch.cat([train_series, train_series_padding])
-            true_series = torch.cat([true_series, true_series_padding])
+            train_series = torch.cat([train_series, series_padding])
+            true_series = torch.cat([true_series, series_padding])
             mask = torch.cat([mask, mask_padding])
 
             return (
