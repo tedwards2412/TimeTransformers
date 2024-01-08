@@ -38,7 +38,7 @@ def Gaussian_loss(
 def train():
     train_split = 0.8
     max_seq_length = 512
-    batch_size = 128
+    batch_size = 512
     test_batch_size = 1024
     device = torch.device("mps")
     save = False
@@ -48,10 +48,10 @@ def train():
 
     # Transformer parameters
     output_dim = 2  # To begin with we can use a Gaussian with mean and variance
-    d_model = 16
+    d_model = 128
     num_heads = 4
-    num_layers = 2
-    d_ff = 16
+    num_layers = 4
+    d_ff = 128
     dropout = 0.0
 
     # First lets download the data and make a data loader
@@ -164,15 +164,6 @@ def train():
         if patience_counter > early_stopping:
             print("Early stopping")
             break
-
-    # transformer.eval()
-    # plt.figure(figsize=(8, 6))
-    # plt.plot(train_epochs, train_losses, label="Train loss")
-    # plt.plot(test_epochs, test_losses, label="Test loss")
-    # plt.xlabel("Epoch")
-    # plt.ylabel("Loss")
-    # plt.legend()
-    # plt.savefig("loss.pdf", bbox_inches="tight")
 
     # Finally, lets save the losses
     file_name = f"results/transformer_{num_params}_training.json"

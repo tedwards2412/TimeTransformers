@@ -39,6 +39,7 @@ def Gaussian_loss(
 
 
 def train(local_rank):
+    local_rank = int(os.environ["LOCAL_RANK"])
     dist.init_process_group(backend="nccl")
     device = torch.device(f"cuda:{local_rank}")
     torch.cuda.set_device(device)
