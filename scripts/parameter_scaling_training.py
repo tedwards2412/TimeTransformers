@@ -42,7 +42,6 @@ def train():
     test_batch_size = 1024
     device = torch.device("mps")
     save = False
-    # epochs = 326
     total_training_steps = 2.5e5
     learning_rate = 0.0001
     early_stopping = 3
@@ -117,12 +116,10 @@ def train():
     test_steps = []
     test_losses = []
 
-    # pbar = tqdm(range(epochs))
     transformer.train()
     min_loss = 1e10
     patience_counter = 0
 
-    # for epoch in pbar:
     step_counter = 0
     evaluation_interval = 10
 
@@ -182,6 +179,8 @@ def train():
         if patience_counter > early_stopping:
             print("Early stopping")
             break
+
+    pbar.close()
 
     # Finally, lets save the losses
     file_name = f"results/transformer_{num_params}_training.json"

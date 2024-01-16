@@ -45,13 +45,13 @@ def train(local_rank):
     torch.cuda.set_device(device)
 
     train_split = 0.8
-    max_seq_length = 512
+    max_seq_length = 1024
     batch_size = 512
     test_batch_size = 1024
     save = False
-    epochs = 51
+    total_training_steps = 2.5e5
     learning_rate = 0.0001
-    early_stopping = 10
+    early_stopping = 3
 
     # Transformer parameters
     output_dim = 2  # To begin with we can use a Gaussian with mean and variance
@@ -59,21 +59,21 @@ def train(local_rank):
     num_heads = 4
     num_layers = 4
     d_ff = 128
-    dropout = 0.0
+    dropout = 0.1
 
     # First lets download the data and make a data loader
     print("Downloading data...")
     datasets_to_load = {
-        # "oikolab_weather_dataset": "10.5281/zenodo.5184708",
-        # "covid_deaths_dataset": "10.5281/zenodo.4656009",
-        # "us_births_dataset": "10.5281/zenodo.4656049",
-        # "solar_4_seconds_dataset": "10.5281/zenodo.4656027",
+        "oikolab_weather_dataset": "10.5281/zenodo.5184708",
+        "covid_deaths_dataset": "10.5281/zenodo.4656009",
+        "us_births_dataset": "10.5281/zenodo.4656049",
+        "solar_4_seconds_dataset": "10.5281/zenodo.4656027",
         # "wind_4_seconds_dataset": "10.5281/zenodo.4656032",
         # "weather_dataset": "10.5281/zenodo.4654822",
-        # "hospital_dataset": "10.5281/zenodo.4656014",
+        "hospital_dataset": "10.5281/zenodo.4656014",
         # "electricity_hourly_dataset": "10.5281/zenodo.4656140",
         # "traffic_hourly_dataset": "10.5281/zenodo.4656132",
-        "rideshare_dataset_without_missing_values": "10.5281/zenodo.5122232",
+        # "rideshare_dataset_without_missing_values": "10.5281/zenodo.5122232",
         # "bitcoin_dataset_without_missing_values": "10.5281/zenodo.5122101",
         # "australian_electricity_demand_dataset": "10.5281/zenodo.4659727",
         # "sunspot_dataset_without_missing_values": "10.5281/zenodo.4654722",
@@ -81,21 +81,17 @@ def train(local_rank):
     }
     dfs = download_data(datasets_to_load)
 
-    training_data_list, test_data_list = convert_df_to_numpy(dfs, train_split)
+    training_data_list, test_data_list, train_masks, test_masks = convert_df_to_numpy(
+        dfs, train_split
+    )
 
-    # train_dataset = TimeSeriesDataset(training_data_list, max_seq_length)
-    # train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-
-    # test_dataset = TimeSeriesDataset(test_data_list, max_seq_length)
-    # test_dataloader = DataLoader(test_dataset, batch_size=test_batch_size, shuffle=True)
-
-    train_dataset = TimeSeriesDataset(training_data_list, max_seq_length)
+    train_dataset = TimeSeriesDataset(training_data_list, max_seq_length, train_masks)
     train_sampler = DistributedSampler(train_dataset)
     train_dataloader = DataLoader(
         train_dataset, batch_size=batch_size, shuffle=False, sampler=train_sampler
     )
 
-    test_dataset = TimeSeriesDataset(test_data_list, max_seq_length)
+    test_dataset = TimeSeriesDataset(test_data_list, max_seq_length, test_masks)
     test_sampler = DistributedSampler(test_dataset, shuffle=False)
     test_dataloader = DataLoader(
         test_dataset, batch_size=test_batch_size, shuffle=False, sampler=test_sampler
@@ -125,22 +121,30 @@ def train(local_rank):
     optimizer = optim.Adam(transformer.parameters(), lr=learning_rate)
     transformer.train()
 
-    e_counter = 1
-    train_epochs = []
+    train_steps = []
     train_losses = []
 
-    test_epochs = []
+    test_steps = []
     test_losses = []
 
-    pbar = tqdm(range(epochs))
     transformer.train()
     min_loss = 1e10
     patience_counter = 0
 
-    for epoch in pbar:
-        train_sampler.set_epoch(epoch)
+    step_counter = 0
+    evaluation_interval = 10
+
+    # Initialize tqdm progress bar
+    if local_rank == 0:
+        pbar = tqdm(total=total_training_steps, desc="Training", position=0)
+
+    while step_counter < total_training_steps:
+        train_sampler.set_epoch(step_counter)
         transformer.train()
         for batch in train_dataloader:
+            if step_counter >= total_training_steps:
+                break
+
             train, true, mask = batch
             batched_data = train.to(device)
             batched_data_true = true.to(device)
@@ -148,15 +152,19 @@ def train(local_rank):
             output = transformer(batched_data, custom_mask=mask.to(device))
             loss = Gaussian_loss(output, batched_data_true)
             train_losses.append(loss.item())
-            train_epochs.append(e_counter)
+            train_steps.append(step_counter)
 
-            pbar.set_description(f"Epoch {epoch}: Loss {loss.item():.5f},")
+            step_counter += 1
+
+            if local_rank == 0:
+                # Update tqdm bar with each step
+                pbar.set_description(f"Epoch {step_counter}: Loss {loss.item():.5f},")
+                pbar.update(1)
 
             loss.backward()
             optimizer.step()
-            e_counter += 1
 
-        if epoch % 5 == 0:
+        if step_counter % evaluation_interval == 0:
             transformer.eval()
             total_test_loss = 0
             with torch.no_grad():  # Disable gradient calculation
@@ -176,23 +184,26 @@ def train(local_rank):
                 patience_counter += 1
 
             test_losses.append(average_test_loss)
-            test_epochs.append(e_counter)
+            test_steps.append(step_counter)
 
             if save:
-                torch.save(transformer.state_dict(), f"transformer-{epoch}.pt")
+                torch.save(transformer.state_dict(), f"transformer-{step_counter}.pt")
 
         if patience_counter > early_stopping:
             print("Early stopping")
             break
+
+    if local_rank == 0:
+        pbar.close()
 
     # Finally, lets save the losses
     file_name = f"results/transformer_{num_params}_training.json"
     model_info = {
         "num_params": num_params,
         "train_losses": train_losses,
-        "train_epochs": train_epochs,
+        "train_epochs": train_steps,
         "test_losses": test_losses,
-        "test_epochs": test_epochs,
+        "test_epochs": test_steps,
         "datasets": list(datasets_to_load.keys()),
     }
     # Writing data to a JSON file
