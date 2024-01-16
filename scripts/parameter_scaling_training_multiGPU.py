@@ -39,7 +39,7 @@ def Gaussian_loss(
 
 
 def train(local_rank):
-    local_rank = int(os.environ["LOCAL_RANK"])
+    # local_rank = int(os.environ["LOCAL_RANK"])
     dist.init_process_group(backend="nccl")
     device = torch.device(f"cuda:{local_rank}")
     torch.cuda.set_device(device)
@@ -55,10 +55,10 @@ def train(local_rank):
 
     # Transformer parameters
     output_dim = 2  # To begin with we can use a Gaussian with mean and variance
-    d_model = 128
-    num_heads = 4
-    num_layers = 4
-    d_ff = 128
+    d_model = 16
+    num_heads = 1
+    num_layers = 2
+    d_ff = 16
     dropout = 0.1
 
     # First lets download the data and make a data loader
