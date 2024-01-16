@@ -162,29 +162,52 @@ def convert_tsf_to_dataframe(
 def convert_df_to_numpy(dfs, train_split=0.8):
     training_data = []
     test_data = []
+    train_masks = []
+    test_masks = []
 
     for df in dfs:
         # Select the 'series_value' column from the filtered DataFrame
-        selected_series_values = df["series_value"]
+        selected_series_values = df["series_value"].to_numpy()
 
-        # T_means_ = df[df["obs_or_fcst"] == ("T_MEAN", "PRCP_SUM")]["series_value"]
-        selected_series_values = selected_series_values.to_numpy()
+        # selected_series_values = selected_series_values.to_numpy()
 
-        def fill_nans(array):
-            array = pd.Series(array)
-            array.ffill(inplace=True)  # Forward fill
-            array.bfill(inplace=True)
-            return array.to_numpy()
+        # def fill_nans(array):
+        #     array = pd.Series(array)
+        #     array.ffill(inplace=True)  # Forward fill
+        #     array.bfill(inplace=True)
+        #     return array.to_numpy()
+
+        def fill_nans_and_create_mask(array):
+            # Convert input array to a Pandas Series
+            series = pd.Series(array)
+
+            # Create a mask: True where NaN, False otherwise
+            mask_ = ~series.isna()
+
+            # Fill NaNs with zero
+            series.fillna(0.0, inplace=True)
+
+            array_filled = series.to_numpy()
+            mask_array = mask_.to_numpy()
+
+            return array_filled, mask_array
 
         N_data = selected_series_values.shape[0]
 
         for i in range(N_data):
-            new_data = fill_nans(selected_series_values[i].to_numpy().astype(float))
+            new_data, mask = fill_nans_and_create_mask(
+                selected_series_values[i].to_numpy().astype(float)
+            )
             new_data_length = new_data.shape[0]
-            training_data.append(new_data[: int(train_split * new_data_length)])
-            test_data.append(new_data[int(train_split * new_data_length) :])
 
-    return training_data, test_data
+            # Need to append test and train masks
+            training_data.append(new_data[: int(train_split * new_data_length)])
+            train_masks.append(mask[: int(train_split * new_data_length)])
+
+            test_data.append(new_data[int(train_split * new_data_length) :])
+            test_masks.append(mask[int(train_split * new_data_length) :])
+
+    return training_data, test_data, train_masks, test_masks
 
 
 def PIT(transformer_pred, y_true):

@@ -24,10 +24,11 @@ def normalize_data(data, mean, std):
 
 
 class TimeSeriesDataset(Dataset):
-    def __init__(self, data, max_sequence_length):
+    def __init__(self, data, max_sequence_length, miss_vals_mask):
         self.max_sequence_length = max_sequence_length
         self.means = np.array([np.mean(data[i]) for i in range(len(data))])
         self.std = np.array([np.std(data[i]) for i in range(len(data))])
+        self.miss_vals_mask = miss_vals_mask
 
         self.data = [
             normalize_data(data[i], self.means[i], self.std[i])
@@ -55,6 +56,7 @@ class TimeSeriesDataset(Dataset):
         # and then randomly select a subsequence of length max_sequence_length
         new_idx = np.random.choice(a=len(self.probs), p=self.probs)
         series = self.data[new_idx]
+        series_mask = self.miss_vals_mask[new_idx]
         if len(series) > self.max_sequence_length:
             # Randomly select a starting point for the sequence
             start_index = random.randint(0, len(series) - self.max_sequence_length - 1)
@@ -68,12 +70,17 @@ class TimeSeriesDataset(Dataset):
                 series[start_index + 1 : start_index + self.max_sequence_length + 1],
                 dtype=torch.float32,
             )
-            mask = torch.ones_like(train_series, dtype=torch.bool)
+            missing_vals_batch = torch.tensor(
+                series_mask[start_index : start_index + self.max_sequence_length],
+                dtype=torch.bool,
+            )
+            mask = torch.ones_like(train_series, dtype=torch.bool).squeeze(-1)
+            final_mask = mask & missing_vals_batch
 
             return (
                 train_series,
                 true_series,
-                mask.squeeze(-1),
+                final_mask,
             )
 
         else:
@@ -83,7 +90,8 @@ class TimeSeriesDataset(Dataset):
             )
             true_series = torch.tensor(series[1:], dtype=torch.float32)
 
-            mask = torch.ones(len(train_series), dtype=torch.bool)
+            # mask = torch.ones(len(train_series), dtype=torch.bool)
+            mask = torch.tensor(series_mask[:-1], dtype=torch.bool)
 
             # Calculate the number of padding elements needed
             padding_length = self.max_sequence_length - len(train_series)

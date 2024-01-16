@@ -37,36 +37,36 @@ def Gaussian_loss(
 
 def train():
     train_split = 0.8
-    max_seq_length = 512
-    batch_size = 512
+    max_seq_length = 1024
+    batch_size = 32
     test_batch_size = 1024
     device = torch.device("mps")
     save = False
-    epochs = 51
+    epochs = 326
     learning_rate = 0.0001
-    early_stopping = 10
+    early_stopping = 3
 
     # Transformer parameters
     output_dim = 2  # To begin with we can use a Gaussian with mean and variance
-    d_model = 128
+    d_model = 32
     num_heads = 4
-    num_layers = 4
-    d_ff = 128
+    num_layers = 2
+    d_ff = 32
     dropout = 0.0
 
     # First lets download the data and make a data loader
     print("Downloading data...")
     datasets_to_load = {
-        # "oikolab_weather_dataset": "10.5281/zenodo.5184708",
-        # "covid_deaths_dataset": "10.5281/zenodo.4656009",
-        # "us_births_dataset": "10.5281/zenodo.4656049",
-        # "solar_4_seconds_dataset": "10.5281/zenodo.4656027",
+        "oikolab_weather_dataset": "10.5281/zenodo.5184708",
+        "covid_deaths_dataset": "10.5281/zenodo.4656009",
+        "us_births_dataset": "10.5281/zenodo.4656049",
+        "solar_4_seconds_dataset": "10.5281/zenodo.4656027",
         # "wind_4_seconds_dataset": "10.5281/zenodo.4656032",
         # "weather_dataset": "10.5281/zenodo.4654822",
-        # "hospital_dataset": "10.5281/zenodo.4656014",
+        "hospital_dataset": "10.5281/zenodo.4656014",
         # "electricity_hourly_dataset": "10.5281/zenodo.4656140",
         # "traffic_hourly_dataset": "10.5281/zenodo.4656132",
-        "rideshare_dataset_without_missing_values": "10.5281/zenodo.5122232",
+        # "rideshare_dataset_without_missing_values": "10.5281/zenodo.5122232",
         # "bitcoin_dataset_without_missing_values": "10.5281/zenodo.5122101",
         # "australian_electricity_demand_dataset": "10.5281/zenodo.4659727",
         # "sunspot_dataset_without_missing_values": "10.5281/zenodo.4654722",
@@ -74,16 +74,21 @@ def train():
     }
     dfs = download_data(datasets_to_load)
 
-    training_data_list, test_data_list = convert_df_to_numpy(dfs, train_split)
+    training_data_list, test_data_list, train_masks, test_masks = convert_df_to_numpy(
+        dfs, train_split
+    )
 
-    train_dataset = TimeSeriesDataset(training_data_list, max_seq_length)
+    train_dataset = TimeSeriesDataset(training_data_list, max_seq_length, train_masks)
     train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 
-    test_dataset = TimeSeriesDataset(test_data_list, max_seq_length)
+    test_dataset = TimeSeriesDataset(test_data_list, max_seq_length, test_masks)
     test_dataloader = DataLoader(test_dataset, batch_size=test_batch_size, shuffle=True)
 
     print("Training dataset size: ", train_dataset.__len__())
     print("Test dataset size: ", test_dataset.__len__())
+
+    print("Total number of training tokens:", train_dataset.total_length())
+    # quit()
 
     # Now lets make a transformer
 
@@ -121,7 +126,7 @@ def train():
         transformer.train()
         for batch in train_dataloader:
             train, true, mask = batch
-            # print(train.squeeze(-1), true, mask)
+
             batched_data = train.to(device)
             batched_data_true = true.to(device)
             optimizer.zero_grad()
@@ -136,7 +141,7 @@ def train():
             optimizer.step()
             e_counter += 1
 
-        if epoch % 5 == 0:
+        if epoch % 1 == 0:
             transformer.eval()
             total_test_loss = 0
             with torch.no_grad():  # Disable gradient calculation

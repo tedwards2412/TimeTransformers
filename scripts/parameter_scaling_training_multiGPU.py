@@ -142,7 +142,6 @@ def train(local_rank):
         transformer.train()
         for batch in train_dataloader:
             train, true, mask = batch
-            # print(train.squeeze(-1), true, mask)
             batched_data = train.to(device)
             batched_data_true = true.to(device)
             optimizer.zero_grad()
