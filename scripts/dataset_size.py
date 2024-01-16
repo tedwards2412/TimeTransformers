@@ -80,19 +80,21 @@ def train():
         "rideshare_dataset_without_missing_values": "10.5281/zenodo.5122232",
         "vehicle_trips_dataset_without_missing_values": "10.5281/zenodo.5122537",
         # Web
-        "web_traffic_extended_dataset_without_missing_values": "10.5281/zenodo.7371038",
+        # "web_traffic_extended_dataset_without_missing_values": "10.5281/zenodo.7371038",
         "london_smart_meters_dataset_with_missing_values": "10.5281/zenodo.4656072",
     }
     # print(len(datasets_to_load.keys()))
     # quit()
     dfs = download_data(datasets_to_load)
 
-    training_data_list, test_data_list = convert_df_to_numpy(dfs, train_split)
+    training_data_list, test_data_list, train_masks, test_masks = convert_df_to_numpy(
+        dfs, train_split
+    )
 
-    train_dataset = TimeSeriesDataset(training_data_list, max_seq_length)
+    train_dataset = TimeSeriesDataset(training_data_list, max_seq_length, train_masks)
     train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 
-    test_dataset = TimeSeriesDataset(test_data_list, max_seq_length)
+    test_dataset = TimeSeriesDataset(test_data_list, max_seq_length, test_masks)
     test_dataloader = DataLoader(test_dataset, batch_size=test_batch_size, shuffle=True)
 
     print("Training dataset size: ", train_dataset.__len__())

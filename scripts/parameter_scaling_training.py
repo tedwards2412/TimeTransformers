@@ -38,11 +38,12 @@ def Gaussian_loss(
 def train():
     train_split = 0.8
     max_seq_length = 1024
-    batch_size = 32
+    batch_size = 512
     test_batch_size = 1024
     device = torch.device("mps")
     save = False
-    epochs = 326
+    # epochs = 326
+    total_training_steps = 2.5e5
     learning_rate = 0.0001
     early_stopping = 3
 
@@ -52,7 +53,7 @@ def train():
     num_heads = 4
     num_layers = 2
     d_ff = 32
-    dropout = 0.0
+    dropout = 0.1
 
     # First lets download the data and make a data loader
     print("Downloading data...")
@@ -110,21 +111,30 @@ def train():
     optimizer = optim.Adam(transformer.parameters(), lr=learning_rate)
     transformer.train()
 
-    e_counter = 1
-    train_epochs = []
+    train_steps = []
     train_losses = []
 
-    test_epochs = []
+    test_steps = []
     test_losses = []
 
-    pbar = tqdm(range(epochs))
+    # pbar = tqdm(range(epochs))
     transformer.train()
     min_loss = 1e10
     patience_counter = 0
 
-    for epoch in pbar:
+    # for epoch in pbar:
+    step_counter = 0
+    evaluation_interval = 10
+
+    # Initialize tqdm progress bar
+    pbar = tqdm(total=total_training_steps, desc="Training", position=0)
+
+    while step_counter < total_training_steps:
         transformer.train()
         for batch in train_dataloader:
+            if step_counter >= total_training_steps:
+                break
+
             train, true, mask = batch
 
             batched_data = train.to(device)
@@ -133,15 +143,18 @@ def train():
             output = transformer(batched_data, custom_mask=mask.to(device))
             loss = Gaussian_loss(output, batched_data_true)
             train_losses.append(loss.item())
-            train_epochs.append(e_counter)
+            train_steps.append(step_counter)
 
-            pbar.set_description(f"Epoch {epoch}: Loss {loss.item():.5f},")
+            step_counter += 1
+
+            # Update tqdm bar with each step
+            pbar.set_description(f"Step {step_counter}: Loss {loss.item():.5f}")
+            pbar.update(1)
 
             loss.backward()
             optimizer.step()
-            e_counter += 1
 
-        if epoch % 1 == 0:
+        if step_counter % evaluation_interval == 0:
             transformer.eval()
             total_test_loss = 0
             with torch.no_grad():  # Disable gradient calculation
@@ -161,10 +174,10 @@ def train():
                 patience_counter += 1
 
             test_losses.append(average_test_loss)
-            test_epochs.append(e_counter)
+            test_steps.append(step_counter)
 
             if save:
-                torch.save(transformer.state_dict(), f"transformer-{epoch}.pt")
+                torch.save(transformer.state_dict(), f"transformer-{step_counter}.pt")
 
         if patience_counter > early_stopping:
             print("Early stopping")
@@ -175,9 +188,9 @@ def train():
     model_info = {
         "num_params": num_params,
         "train_losses": train_losses,
-        "train_epochs": train_epochs,
+        "train_epochs": train_steps,
         "test_losses": test_losses,
-        "test_epochs": test_epochs,
+        "test_epochs": test_steps,
         "datasets": list(datasets_to_load.keys()),
     }
     # Writing data to a JSON file
