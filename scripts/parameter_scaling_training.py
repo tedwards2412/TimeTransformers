@@ -39,8 +39,15 @@ def train():
     train_split = 0.8
     max_seq_length = 1024
     batch_size = 512
-    test_batch_size = 1024
-    device = torch.device("mps")
+    test_batch_size = 512
+    device = torch.device(
+        "cuda"
+        if torch.cuda.is_available()
+        else "mps"
+        if torch.backends.mps.is_available()
+        else "cpu"
+    )
+    print(f"Using {device}")
     save = False
     total_training_steps = 2.5e5
     learning_rate = 0.0001
@@ -48,10 +55,10 @@ def train():
 
     # Transformer parameters
     output_dim = 2  # To begin with we can use a Gaussian with mean and variance
-    d_model = 32
-    num_heads = 4
+    d_model = 16
+    num_heads = 1
     num_layers = 2
-    d_ff = 32
+    d_ff = 16
     dropout = 0.1
 
     # First lets download the data and make a data loader
