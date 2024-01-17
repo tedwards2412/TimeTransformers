@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import math
+import torch.utils.checkpoint
 
 
 class MultiHeadAttention(nn.Module):
@@ -139,6 +140,16 @@ class DecoderLayer(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x, src_mask):
+        # Checkpoint the forward pass
+        if self.training:  # Only apply checkpointing during training
+            return torch.utils.checkpoint.checkpoint(
+                self.forward_step, x, src_mask, use_reentrant=False
+            )
+        else:
+            return self.forward_step(x, src_mask)
+
+    def forward_step(self, x, src_mask):
+        # def forward(self, x, src_mask):
         attn_output = self.self_attn(x, x, x, src_mask)
         # x = self.norm1(x + self.dropout(attn_output))
         x = x + self.dropout(attn_output)

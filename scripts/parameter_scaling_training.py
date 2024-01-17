@@ -35,8 +35,7 @@ def train():
     print(f"Using {device}")
     save = False
     total_training_steps = 2.5e5
-    learning_rate = 0.0001
-    early_stopping = 3
+    early_stopping = 2.5e5
 
     # Transformer parameters
     output_dim = 2  # To begin with we can use a Gaussian with mean and variance
@@ -98,8 +97,11 @@ def train():
     print("Number of parameters: ", num_params)
 
     # Now lets train it!
-
+    learning_rate = 0.0001
     optimizer = optim.Adam(transformer.parameters(), lr=learning_rate)
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer, mode="min", patience=500, verbose=True, factor=0.5
+    )
     transformer.train()
 
     train_steps = []
@@ -142,6 +144,7 @@ def train():
 
             loss.backward()
             optimizer.step()
+            scheduler.step(loss)
 
         if step_counter % evaluation_interval == 0:
             transformer.eval()
