@@ -76,6 +76,7 @@ class TimeSeriesDataset(Dataset):
             )
             mask = torch.ones_like(train_series, dtype=torch.bool).squeeze(-1)
             final_mask = mask & missing_vals_batch
+            # final_mask[0] = False
 
             return (
                 train_series,

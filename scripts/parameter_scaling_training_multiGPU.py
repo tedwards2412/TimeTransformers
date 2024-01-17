@@ -23,21 +23,6 @@ from utils import convert_df_to_numpy
 import Transformer
 
 
-def Gaussian_loss(
-    transformer_pred, y_true, epsilon=torch.tensor(1e-6, dtype=torch.float32)
-):
-    epsilon = epsilon.to(transformer_pred.device)
-    # Splitting the output into mean and variance
-    mean = transformer_pred[:, :, 0]
-    var = torch.nn.functional.softplus(transformer_pred[:, :, 1]) + epsilon
-
-    # Calculating the Gaussian negative log-likelihood loss
-    # print(y_true, mean, torch.log(var))
-    loss = torch.mean((y_true - mean) ** 2 / var + torch.log(var))
-
-    return loss
-
-
 def train(local_rank):
     # local_rank = int(os.environ["LOCAL_RANK"])
     dist.init_process_group(backend="nccl")
@@ -150,7 +135,7 @@ def train(local_rank):
             batched_data_true = true.to(device)
             optimizer.zero_grad()
             output = transformer(batched_data, custom_mask=mask.to(device))
-            loss = Gaussian_loss(output, batched_data_true)
+            loss = transformer.Gaussian_loss(output, batched_data_true)
             train_losses.append(loss.item())
             train_steps.append(step_counter)
 
@@ -173,7 +158,7 @@ def train(local_rank):
                     batched_data = train.to(device)
                     batched_data_true = true.to(device)
                     output = transformer(batched_data)
-                    test_loss = Gaussian_loss(output, batched_data_true)
+                    test_loss = transformer.Gaussian_loss(output, batched_data_true)
                     total_test_loss += test_loss.item()
 
             average_test_loss = total_test_loss / len(test_dataloader)

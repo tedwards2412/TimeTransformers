@@ -19,16 +19,28 @@ class MultiHeadAttention(nn.Module):
         self.W_v = nn.Linear(d_model, d_model)
         self.W_o = nn.Linear(d_model, d_model)
 
+    def custom_softmax(self, x, dim=-1):
+        max_val = torch.max(x, dim=dim, keepdim=True).values
+        max_val = torch.where(
+            torch.isinf(max_val), torch.tensor(0.0, device=max_val.device), max_val
+        )
+        exp_x = torch.exp(x - max_val)
+        sum_exp_x = torch.sum(exp_x, dim=dim, keepdim=True)
+        softmax_x = exp_x / (sum_exp_x + 1e-9)
+        return softmax_x
+
     def scaled_dot_product_attention(self, Q, K, V, mask=None):
         # Calculate attention scores
         attn_scores = torch.matmul(Q, K.transpose(-2, -1)) / math.sqrt(self.d_k)
 
         # Apply mask if provided (useful for preventing attention to certain parts like padding)
         if mask is not None:
-            attn_scores = attn_scores.masked_fill(mask == 0, -1e9)  # + 1e-32
+            # attn_scores_temp = attn_scores.masked_fill(mask == 0, -1e10)
+            attn_scores = attn_scores.masked_fill(mask == 0, -torch.inf)
 
         # Softmax is applied to obtain attention probabilities
-        attn_probs = torch.softmax(attn_scores, dim=-1)
+        # attn_probs = torch.softmax(attn_scores_temp, dim=-1)
+        attn_probs = self.custom_softmax(attn_scores, dim=-1)
 
         # Multiply by values to obtain the final output
         output = torch.matmul(attn_probs, V)
@@ -63,10 +75,10 @@ class MultiHeadAttention(nn.Module):
         V = self.split_heads(self.W_v(V))
 
         # Perform scaled dot-product attention
-        # attn_output = self.scaled_dot_product_attention(Q, K, V, mask)
-        attn_output = nn.functional.scaled_dot_product_attention(
-            Q, K, V, attn_mask=mask
-        )
+        attn_output = self.scaled_dot_product_attention(Q, K, V, mask)
+        # attn_output2 = nn.functional.scaled_dot_product_attention(
+        #     Q, K, V, attn_mask=mask
+        # )
 
         # Combine heads and apply output transformation
 
@@ -203,32 +215,19 @@ class Decoder_Transformer(nn.Module):
 
         return mask
 
-    # def generate_mask(self, src):
-    #     batch_size, seq_length = src.size(0), src.size(1)
+    def Gaussian_loss(
+        self, transformer_pred, y_true, epsilon=torch.tensor(1e-6, dtype=torch.float32)
+    ):
+        epsilon = epsilon.to(self.device)
+        # Splitting the output into mean and variance
+        mean = transformer_pred[:, :, 0]
+        var = torch.nn.functional.softplus(transformer_pred[:, :, 1]) + epsilon
 
-    #     # Create a mask of shape [seq_length, seq_length] with zeros above the diagonal and ones on and below
-    #     mask = torch.tril(torch.ones(seq_length, seq_length, dtype=torch.bool)).to(
-    #         self.device
-    #     )
+        # Calculating the Gaussian negative log-likelihood loss
+        # print(y_true, mean, torch.log(var))
+        loss = torch.mean((y_true - mean) ** 2 / var + torch.log(var))
 
-    #     # Expand the mask for the batch size. Shape: [batch_size, 1, seq_length, seq_length]
-    #     mask = mask.unsqueeze(0).expand(batch_size, -1, -1, -1)
-
-    #     return mask
-
-    # def generate_mask(self, src):
-    #     # According to chatGPT, you need to invert the mask
-    #     batch_size, seq_length = src.size(0), src.size(1)
-
-    #     # Create a mask of shape [seq_length, seq_length] with ones above
-    #     mask = torch.triu(
-    #         torch.ones(seq_length, seq_length).to(self.device), diagonal=1
-    #     ).to(self.device)
-
-    #     # Expand the mask for the batch size. Shape: [batch_size, 1, seq_length, seq_length]
-    #     mask = mask.unsqueeze(0).expand(batch_size, -1, -1, -1)
-
-    #     return mask
+        return loss
 
     def forward(self, src, custom_mask=None):
         src_mask = self.generate_mask(src, custom_mask=custom_mask)

@@ -20,21 +20,6 @@ from utils import convert_df_to_numpy
 import Transformer
 
 
-def Gaussian_loss(
-    transformer_pred, y_true, epsilon=torch.tensor(1e-6, dtype=torch.float32)
-):
-    epsilon = epsilon.to(transformer_pred.device)
-    # Splitting the output into mean and variance
-    mean = transformer_pred[:, :, 0]
-    var = torch.nn.functional.softplus(transformer_pred[:, :, 1]) + epsilon
-
-    # Calculating the Gaussian negative log-likelihood loss
-    # print(y_true, mean, torch.log(var))
-    loss = torch.mean((y_true - mean) ** 2 / var + torch.log(var))
-
-    return loss
-
-
 def train():
     train_split = 0.8
     max_seq_length = 1024
@@ -65,9 +50,9 @@ def train():
     print("Downloading data...")
     datasets_to_load = {
         "oikolab_weather_dataset": "10.5281/zenodo.5184708",
-        "covid_deaths_dataset": "10.5281/zenodo.4656009",
-        "us_births_dataset": "10.5281/zenodo.4656049",
-        "solar_4_seconds_dataset": "10.5281/zenodo.4656027",
+        # "covid_deaths_dataset": "10.5281/zenodo.4656009",
+        # "us_births_dataset": "10.5281/zenodo.4656049",
+        # "solar_4_seconds_dataset": "10.5281/zenodo.4656027",
         # "wind_4_seconds_dataset": "10.5281/zenodo.4656032",
         # "weather_dataset": "10.5281/zenodo.4654822",
         "hospital_dataset": "10.5281/zenodo.4656014",
@@ -145,7 +130,7 @@ def train():
             batched_data_true = true.to(device)
             optimizer.zero_grad()
             output = transformer(batched_data, custom_mask=mask.to(device))
-            loss = Gaussian_loss(output, batched_data_true)
+            loss = transformer.Gaussian_loss(output, batched_data_true)
             train_losses.append(loss.item())
             train_steps.append(step_counter)
 
@@ -167,7 +152,7 @@ def train():
                     batched_data = train.to(device)
                     batched_data_true = true.to(device)
                     output = transformer(batched_data)
-                    test_loss = Gaussian_loss(output, batched_data_true)
+                    test_loss = transformer.Gaussian_loss(output, batched_data_true)
                     total_test_loss += test_loss.item()
 
             average_test_loss = total_test_loss / len(test_dataloader)
