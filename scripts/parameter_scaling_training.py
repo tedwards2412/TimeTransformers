@@ -97,10 +97,13 @@ def train():
     print("Number of parameters: ", num_params)
 
     # Now lets train it!
-    learning_rate = 0.0001
-    optimizer = optim.Adam(transformer.parameters(), lr=learning_rate)
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(
-        optimizer, mode="min", patience=500, verbose=True, factor=0.5
+    learning_rate = 1e-3
+    optimizer = optim.AdamW(transformer.parameters(), lr=learning_rate)
+    # scheduler = optim.lr_scheduler.ReduceLROnPlateau(
+    #     optimizer, mode="min", patience=500, verbose=True, factor=0.5
+    # )
+    scheduler = optim.lr_scheduler.CosineAnnealingLR(
+        optimizer, T_max=total_training_steps, eta_min=1e-6
     )
     transformer.train()
 
@@ -144,7 +147,7 @@ def train():
 
             loss.backward()
             optimizer.step()
-            scheduler.step(loss)
+            scheduler.step()
 
         if step_counter % evaluation_interval == 0:
             transformer.eval()
