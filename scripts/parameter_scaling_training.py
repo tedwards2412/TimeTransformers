@@ -66,7 +66,7 @@ def train():
 
     # Transformer parameters
     output_dim = 2  # To begin with we can use a Gaussian with mean and variance
-    d_model = 16
+    d_model = 32
     num_heads = 1
     num_layers = 2
     d_ff = 16

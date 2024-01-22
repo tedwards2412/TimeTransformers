@@ -158,6 +158,27 @@ class DecoderLayer(nn.Module):
         return x
 
 
+class MultiLayerDistributionHead(nn.Module):
+    def __init__(self, d_model, num_distribution_layers, dropout, output_size):
+        super().__init__()
+        self.dropout = nn.Dropout(dropout)
+
+        self.head_layers = nn.ModuleList()
+        for i in range(num_distribution_layers - 1):
+            self.head_layers += [
+                nn.Linear(d_model, d_model),
+                nn.ReLU(),
+                nn.Dropout(dropout) if dropout > 0 else nn.Identity(),
+            ]
+        self.head_layers.append(nn.Linear(d_model, output_size))
+
+    def forward(self, embedding: torch.Tensor) -> torch.Tensor:
+        embedding = self.dropout(embedding)
+        for layer in self.head_layers:
+            embedding = layer(embedding)
+        return embedding
+
+
 class Decoder_Transformer(nn.Module):
     def __init__(
         self,
@@ -169,6 +190,7 @@ class Decoder_Transformer(nn.Module):
         max_seq_length,
         dropout,
         device=torch.device("cpu"),
+        num_distribution_layers=2,
     ):
         super(Decoder_Transformer, self).__init__()
         self.device = device
@@ -186,7 +208,10 @@ class Decoder_Transformer(nn.Module):
                 for _ in range(num_layers)
             ]
         )
-        self.fc = nn.Linear(d_model, output_size).to(device)
+        # self.distribution_head = nn.Linear(d_model, output_size).to(device)
+        self.distribution_head = MultiLayerDistributionHead(
+            d_model, num_distribution_layers, dropout, output_size
+        )
         self.dropout = nn.Dropout(dropout).to(device)
 
     def generate_mask(self, src, custom_mask=None):
@@ -248,7 +273,7 @@ class Decoder_Transformer(nn.Module):
         for dec_layer in self.decoder_layers:
             src = dec_layer(src, src_mask)
 
-        output = self.fc(src)
+        output = self.distribution_head(src)
         return output
 
     def generate(self, src, n_sequence):
