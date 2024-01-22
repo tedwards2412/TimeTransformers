@@ -35,7 +35,7 @@ class GradualWarmupScheduler(_LRScheduler):
             if not self.finished_warmup:
                 self.after_scheduler.base_lrs = [base_lr for base_lr in self.base_lrs]
                 self.finished_warmup = True
-            return self.after_scheduler.get_lr()
+            return self.after_scheduler.get_last_lr()
         return self.base_lrs
 
     def step(self, epoch=None):
@@ -53,7 +53,7 @@ def train():
     save = False
     total_training_steps = 2.5e5
     early_stopping = 2.5e5
-    warmup_steps = 100
+    warmup_steps = 30
 
     device = torch.device(
         "cuda"
@@ -82,49 +82,49 @@ def train():
         "cif_2016_dataset": "10.5281/zenodo.4656042",
         "fred_md_dataset": "10.5281/zenodo.4654833",
         "dominick_dataset": "10.5281/zenodo.4654802",
-        # Health
-        "covid_mobility_dataset_without_missing_values": "10.5281/zenodo.4663809",
-        "kdd_cup_2018_dataset_without_missing_values": "10.5281/zenodo.4656756",
-        "covid_deaths_dataset": "10.5281/zenodo.4656009",
-        "us_births_dataset": "10.5281/zenodo.4656049",
-        "hospital_dataset": "10.5281/zenodo.4656014",
-        # General
-        "m4_hourly_dataset": "10.5281/zenodo.4656589",
-        "m4_daily_dataset": "10.5281/zenodo.4656548",
-        "m4_weekly_dataset": "10.5281/zenodo.4656522",
-        "m4_monthly_dataset": "10.5281/zenodo.4656480",
-        "m4_quarterly_dataset": "10.5281/zenodo.4656410",
-        "m4_yearly_dataset": "10.5281/zenodo.4656379",
-        "electricity_weekly_dataset": "10.5281/zenodo.4656141",
-        "electricity_hourly_dataset": "10.5281/zenodo.4656140",
-        "australian_electricity_demand_dataset": "10.5281/zenodo.4659727",
-        "tourism_yearly_dataset": "10.5281/zenodo.4656103",
-        "tourism_monthly_dataset": "10.5281/zenodo.4656096",
-        "tourism_quarterly_dataset": "10.5281/zenodo.4656093",
-        "elecdemand_dataset": "10.5281/zenodo.4656069",
-        "car_parts_dataset_without_missing_values": "10.5281/zenodo.4656021",
-        # Weather
-        "oikolab_weather_dataset": "10.5281/zenodo.5184708",
-        "sunspot_dataset_without_missing_values": "10.5281/zenodo.4654722",
-        "solar_4_seconds_dataset": "10.5281/zenodo.4656027",
-        "wind_4_seconds_dataset": "10.5281/zenodo.4656032",
-        "weather_dataset": "10.5281/zenodo.4654822",
-        "temperature_rain_dataset_without_missing_values": "10.5281/zenodo.5129091",
-        "solar_weekly_dataset": "10.5281/zenodo.4656151",
-        "solar_10_minutes_dataset": "10.5281/zenodo.4656144",
-        "saugeenday_dataset": "10.5281/zenodo.4656058",
-        "wind_farms_minutely_dataset_without_missing_values": "10.5281/zenodo.4654858",
-        # Traffic
-        "kaggle_web_traffic_weekly_dataset": "10.5281/zenodo.4656664",
-        "kaggle_web_traffic_dataset_without_missing_values": "10.5281/zenodo.4656075",
-        "pedestrian_counts_dataset": "10.5281/zenodo.4656626",
-        "traffic_weekly_dataset": "10.5281/zenodo.4656135",
-        "traffic_hourly_dataset": "10.5281/zenodo.4656132",
-        "rideshare_dataset_without_missing_values": "10.5281/zenodo.5122232",
-        "vehicle_trips_dataset_without_missing_values": "10.5281/zenodo.5122537",
-        # Web
-        "kaggle_web_traffic_dataset_without_missing_values": "10.5281/zenodo.4656075",
-        "london_smart_meters_dataset_with_missing_values": "10.5281/zenodo.4656072",
+        # # Health
+        # "covid_mobility_dataset_without_missing_values": "10.5281/zenodo.4663809",
+        # "kdd_cup_2018_dataset_without_missing_values": "10.5281/zenodo.4656756",
+        # "covid_deaths_dataset": "10.5281/zenodo.4656009",
+        # "us_births_dataset": "10.5281/zenodo.4656049",
+        # "hospital_dataset": "10.5281/zenodo.4656014",
+        # # General
+        # "m4_hourly_dataset": "10.5281/zenodo.4656589",
+        # "m4_daily_dataset": "10.5281/zenodo.4656548",
+        # "m4_weekly_dataset": "10.5281/zenodo.4656522",
+        # "m4_monthly_dataset": "10.5281/zenodo.4656480",
+        # "m4_quarterly_dataset": "10.5281/zenodo.4656410",
+        # "m4_yearly_dataset": "10.5281/zenodo.4656379",
+        # "electricity_weekly_dataset": "10.5281/zenodo.4656141",
+        # "electricity_hourly_dataset": "10.5281/zenodo.4656140",
+        # "australian_electricity_demand_dataset": "10.5281/zenodo.4659727",
+        # "tourism_yearly_dataset": "10.5281/zenodo.4656103",
+        # "tourism_monthly_dataset": "10.5281/zenodo.4656096",
+        # "tourism_quarterly_dataset": "10.5281/zenodo.4656093",
+        # "elecdemand_dataset": "10.5281/zenodo.4656069",
+        # "car_parts_dataset_without_missing_values": "10.5281/zenodo.4656021",
+        # # Weather
+        # "oikolab_weather_dataset": "10.5281/zenodo.5184708",
+        # "sunspot_dataset_without_missing_values": "10.5281/zenodo.4654722",
+        # "solar_4_seconds_dataset": "10.5281/zenodo.4656027",
+        # "wind_4_seconds_dataset": "10.5281/zenodo.4656032",
+        # "weather_dataset": "10.5281/zenodo.4654822",
+        # "temperature_rain_dataset_without_missing_values": "10.5281/zenodo.5129091",
+        # "solar_weekly_dataset": "10.5281/zenodo.4656151",
+        # "solar_10_minutes_dataset": "10.5281/zenodo.4656144",
+        # "saugeenday_dataset": "10.5281/zenodo.4656058",
+        # "wind_farms_minutely_dataset_without_missing_values": "10.5281/zenodo.4654858",
+        # # Traffic
+        # "kaggle_web_traffic_weekly_dataset": "10.5281/zenodo.4656664",
+        # "kaggle_web_traffic_dataset_without_missing_values": "10.5281/zenodo.4656075",
+        # "pedestrian_counts_dataset": "10.5281/zenodo.4656626",
+        # "traffic_weekly_dataset": "10.5281/zenodo.4656135",
+        # "traffic_hourly_dataset": "10.5281/zenodo.4656132",
+        # "rideshare_dataset_without_missing_values": "10.5281/zenodo.5122232",
+        # "vehicle_trips_dataset_without_missing_values": "10.5281/zenodo.5122537",
+        # # Web
+        # "kaggle_web_traffic_dataset_without_missing_values": "10.5281/zenodo.4656075",
+        # "london_smart_meters_dataset_with_missing_values": "10.5281/zenodo.4656072",
     }
     dfs = download_data(datasets_to_load)
 
@@ -209,6 +209,7 @@ def train():
 
             loss.backward()
             optimizer.step()
+            # print(f"Learning Rate = {scheduler.get_lr()[0]}")
             scheduler.step()
 
         if step_counter % evaluation_interval == 0:
