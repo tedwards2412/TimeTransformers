@@ -1,12 +1,5 @@
-import numpy as np
-import matplotlib.pyplot as plt
 import os
-from torch.utils.data import Dataset, DataLoader
-import torch
-import random
-import torch.optim as optim
-from tqdm import tqdm
-import json
+from torch.utils.data import DataLoader
 
 # This is just until temporary implementation
 import os
@@ -17,29 +10,13 @@ sys.path.insert(0, cwd + "/../timetransformers")
 
 from data_handling import TimeSeriesDataset, download_data
 from utils import convert_df_to_numpy
-import Transformer
-
-
-def Gaussian_loss(
-    transformer_pred, y_true, epsilon=torch.tensor(1e-6, dtype=torch.float32)
-):
-    epsilon = epsilon.to(transformer_pred.device)
-    # Splitting the output into mean and variance
-    mean = transformer_pred[:, :, 0]
-    var = torch.nn.functional.softplus(transformer_pred[:, :, 1]) + epsilon
-
-    # Calculating the Gaussian negative log-likelihood loss
-    # print(y_true, mean, torch.log(var))
-    loss = torch.mean((y_true - mean) ** 2 / var + torch.log(var))
-
-    return loss
 
 
 def train():
     train_split = 0.8
     max_seq_length = 1024
-    batch_size = 512
-    test_batch_size = 1024
+    # batch_size = 512
+    # test_batch_size = 1024
 
     # First lets download the data and make a data loader
     print("Downloading data...")
@@ -48,6 +25,9 @@ def train():
         "nn5_weekly_dataset": "10.5281/zenodo.4656125",
         "nn5_daily_dataset_without_missing_values": "10.5281/zenodo.4656117",
         "bitcoin_dataset_without_missing_values": "10.5281/zenodo.5122101",
+        "cif_2016_dataset": "10.5281/zenodo.4656042",
+        "fred_md_dataset": "10.5281/zenodo.4654833",
+        "dominick_dataset": "10.5281/zenodo.4654802",
         # Health
         "covid_mobility_dataset_without_missing_values": "10.5281/zenodo.4663809",
         "kdd_cup_2018_dataset_without_missing_values": "10.5281/zenodo.4656756",
@@ -64,6 +44,11 @@ def train():
         "electricity_weekly_dataset": "10.5281/zenodo.4656141",
         "electricity_hourly_dataset": "10.5281/zenodo.4656140",
         "australian_electricity_demand_dataset": "10.5281/zenodo.4659727",
+        "tourism_yearly_dataset": "10.5281/zenodo.4656103",
+        "tourism_monthly_dataset": "10.5281/zenodo.4656096",
+        "tourism_quarterly_dataset": "10.5281/zenodo.4656093",
+        "elecdemand_dataset": "10.5281/zenodo.4656069",
+        "car_parts_dataset_without_missing_values": "10.5281/zenodo.4656021",
         # Weather
         "oikolab_weather_dataset": "10.5281/zenodo.5184708",
         "sunspot_dataset_without_missing_values": "10.5281/zenodo.4654722",
@@ -71,6 +56,10 @@ def train():
         "wind_4_seconds_dataset": "10.5281/zenodo.4656032",
         "weather_dataset": "10.5281/zenodo.4654822",
         "temperature_rain_dataset_without_missing_values": "10.5281/zenodo.5129091",
+        "solar_weekly_dataset": "10.5281/zenodo.4656151",
+        "solar_10_minutes_dataset": "10.5281/zenodo.4656144",
+        "saugeenday_dataset": "10.5281/zenodo.4656058",
+        "wind_farms_minutely_dataset_without_missing_values": "10.5281/zenodo.4654858",
         # Traffic
         "kaggle_web_traffic_weekly_dataset": "10.5281/zenodo.4656664",
         "kaggle_web_traffic_dataset_without_missing_values": "10.5281/zenodo.4656075",
@@ -80,7 +69,7 @@ def train():
         "rideshare_dataset_without_missing_values": "10.5281/zenodo.5122232",
         "vehicle_trips_dataset_without_missing_values": "10.5281/zenodo.5122537",
         # Web
-        # "web_traffic_extended_dataset_without_missing_values": "10.5281/zenodo.7371038",
+        "kaggle_web_traffic_dataset_without_missing_values": "10.5281/zenodo.4656075",
         "london_smart_meters_dataset_with_missing_values": "10.5281/zenodo.4656072",
     }
     # print(len(datasets_to_load.keys()))
@@ -92,16 +81,16 @@ def train():
     )
 
     train_dataset = TimeSeriesDataset(training_data_list, max_seq_length, train_masks)
-    train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+    # train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 
     test_dataset = TimeSeriesDataset(test_data_list, max_seq_length, test_masks)
-    test_dataloader = DataLoader(test_dataset, batch_size=test_batch_size, shuffle=True)
+    # test_dataloader = DataLoader(test_dataset, batch_size=test_batch_size, shuffle=True)
 
     print("Training dataset size: ", train_dataset.__len__())
     print("Test dataset size: ", test_dataset.__len__())
 
     print("Total number of training tokens:", train_dataset.total_length())
-    print("Total number of test tokens:", train_dataset.total_length())
+    print("Total number of test tokens:", test_dataset.total_length())
 
     return None
 

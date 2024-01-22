@@ -135,8 +135,8 @@ class DecoderLayer(nn.Module):
         super(DecoderLayer, self).__init__()
         self.self_attn = MultiHeadAttention(d_model, num_heads)
         self.feed_forward = PositionWiseFeedForward(d_model, d_ff)
-        # self.norm1 = nn.LayerNorm(d_model)
-        # self.norm2 = nn.LayerNorm(d_model)
+        self.norm1 = nn.LayerNorm(d_model)
+        self.norm2 = nn.LayerNorm(d_model)
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x, src_mask):
@@ -149,12 +149,11 @@ class DecoderLayer(nn.Module):
             return self.forward_step(x, src_mask)
 
     def forward_step(self, x, src_mask):
-        # def forward(self, x, src_mask):
         attn_output = self.self_attn(x, x, x, src_mask)
-        # x = self.norm1(x + self.dropout(attn_output))
+        x = self.norm1(x + self.dropout(attn_output))
         x = x + self.dropout(attn_output)
         ff_output = self.feed_forward(x)
-        # x = self.norm2(x + self.dropout(ff_output))
+        x = self.norm2(x + self.dropout(ff_output))
         x = x + self.dropout(ff_output)
         return x
 
@@ -244,7 +243,7 @@ class Decoder_Transformer(nn.Module):
         src_mask = self.generate_mask(src, custom_mask=custom_mask)
         src = self.embedding_layer(src)
         src = self.positional_encoding(src)
-        # src = self.dropout(src)
+        src = self.dropout(src)
 
         for dec_layer in self.decoder_layers:
             src = dec_layer(src, src_mask)
