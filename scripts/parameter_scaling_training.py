@@ -4,6 +4,8 @@ import torch
 from torch.optim.lr_scheduler import _LRScheduler
 import torch.optim as optim
 from tqdm import tqdm
+import yaml
+import argparse
 import json
 
 # This is just until temporary implementation
@@ -14,46 +16,31 @@ cwd = os.getcwd()
 sys.path.insert(0, cwd + "/../timetransformers")
 
 from data_handling import TimeSeriesDataset, download_data
-from utils import convert_df_to_numpy
+from utils import convert_df_to_numpy, GradualWarmupScheduler
 import Transformer
 
 
-class GradualWarmupScheduler(_LRScheduler):
-    def __init__(self, optimizer, total_warmup_steps, after_scheduler=None):
-        self.total_warmup_steps = total_warmup_steps
-        self.after_scheduler = after_scheduler
-        self.finished_warmup = False
-        super().__init__(optimizer)
+def train(config):
+    with open(config, "r") as file:
+        config = yaml.safe_load(file)
 
-    def get_lr(self):
-        if self.last_epoch < self.total_warmup_steps:
-            return [
-                base_lr * float(self.last_epoch) / self.total_warmup_steps
-                for base_lr in self.base_lrs
-            ]
-        if self.after_scheduler:
-            if not self.finished_warmup:
-                self.after_scheduler.base_lrs = [base_lr for base_lr in self.base_lrs]
-                self.finished_warmup = True
-            return self.after_scheduler.get_last_lr()
-        return self.base_lrs
+    # Accessing the configuration values
+    train_split = config["train"]["train_split"]
+    max_seq_length = config["train"]["max_seq_length"]
+    batch_size = config["train"]["batch_size"]
+    test_batch_size = config["train"]["test_batch_size"]
+    save = config["train"]["save"]
+    total_training_steps = config["train"]["total_training_steps"]
+    early_stopping = config["train"]["early_stopping"]
+    warmup_steps = config["train"]["warmup_steps"]
 
-    def step(self, epoch=None):
-        if self.finished_warmup and self.after_scheduler:
-            self.after_scheduler.step(epoch)
-        else:
-            return super(GradualWarmupScheduler, self).step(epoch)
-
-
-def train():
-    train_split = 0.8
-    max_seq_length = 1024
-    batch_size = 512
-    test_batch_size = 2048
-    save = True
-    total_training_steps = 2.5e5
-    early_stopping = 2.5e5
-    warmup_steps = 3000
+    # Transformer parameters
+    output_dim = config["transformer"]["output_dim"]
+    d_model = config["transformer"]["d_model"]
+    num_heads = config["transformer"]["num_heads"]
+    num_layers = config["transformer"]["num_layers"]
+    d_ff = config["transformer"]["d_ff"]
+    dropout = config["transformer"]["dropout"]
 
     device = torch.device(
         "cuda"
@@ -63,14 +50,6 @@ def train():
         else "cpu"
     )
     print(f"Using {device}")
-
-    # Transformer parameters
-    output_dim = 2  # To begin with we can use a Gaussian with mean and variance
-    d_model = 8
-    num_heads = 1
-    num_layers = 1
-    d_ff = 8
-    dropout = 0.1
 
     # First lets download the data and make a data loader
     print("Downloading data...")
@@ -136,12 +115,12 @@ def train():
 
     train_dataset = TimeSeriesDataset(training_data_list, max_seq_length, train_masks)
     train_dataloader = DataLoader(
-        train_dataset, batch_size=batch_size, shuffle=True, num_workers=12
+        train_dataset, batch_size=batch_size, shuffle=True, num_workers=11
     )
 
     test_dataset = TimeSeriesDataset(test_data_list, max_seq_length, test_masks)
     test_dataloader = DataLoader(
-        test_dataset, batch_size=test_batch_size, shuffle=True, num_workers=12
+        test_dataset, batch_size=test_batch_size, shuffle=True, num_workers=11
     )
 
     print("Training dataset size: ", train_dataset.__len__())
@@ -267,4 +246,10 @@ def train():
 
 
 if __name__ == "__main__":
-    train()
+    parser = argparse.ArgumentParser(description="Training script configuration.")
+    parser.add_argument(
+        "config_file", type=str, help="Path to the configuration YAML file."
+    )
+    args = parser.parse_args()
+
+    train(args.config_file)
