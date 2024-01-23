@@ -39,7 +39,12 @@ class TimeSeriesDataset(Dataset):
             / self.total_length()
         )
 
+        self.data_len = self.calc_len()
+
     def __len__(self):
+        return self.data_len
+
+    def calc_len(self):
         l = 0
         for i in range(len(self.data)):
             l += len(self.data[i])
@@ -76,7 +81,6 @@ class TimeSeriesDataset(Dataset):
             )
             mask = torch.ones_like(train_series, dtype=torch.bool).squeeze(-1)
             final_mask = mask & missing_vals_batch
-            # final_mask[0] = False
 
             return (
                 train_series,
@@ -114,20 +118,45 @@ class TimeSeriesDataset(Dataset):
 
 
 def download_single_datafile(dataset_name, dataset_id):
-    os.system(f"zenodo_get {dataset_id}")
-    os.system(f"mv {dataset_name}.zip ../data/{dataset_name}.zip")
-    print(f"Downloaded {dataset_name}.tsf")
+    # Define the path for the zip file
+    zip_file_path = f"../data/{dataset_name}.tsf"
 
-    # Unzip the dataset
-    os.system(f"unzip -o ../data/{dataset_name}.zip -d ../data/")
-    print(f"Unzipped {dataset_name}.tsf")
+    # Check if the dataset already exists
+    if not os.path.exists(zip_file_path):
+        # Download the dataset if it doesn't exist
+        os.system(f"zenodo_get {dataset_id}")
+        os.system(f"mv {dataset_name}.zip {zip_file_path}")
+        print(f"Downloaded {dataset_name}.zip")
 
-    # Remove the zip file
-    os.system(f"rm ../data/{dataset_name}.zip")
-    os.system(f"rm md5sums.txt")
+        # Unzip the dataset
+        os.system(f"unzip -o {zip_file_path} -d ../data/")
+        print(f"Unzipped {dataset_name}.zip")
+
+        # Remove the zip file
+        os.system(f"rm {zip_file_path}")
+        os.system(f"rm md5sums.txt")
+    else:
+        print(f"{dataset_name}.tsf already exists. Skipping download.")
 
     # Convert the tsf file to a pandas dataframe
     return convert_tsf_to_dataframe(f"../data/{dataset_name}.tsf")[0]
+
+
+# def download_single_datafile(dataset_name, dataset_id):
+#     os.system(f"zenodo_get {dataset_id}")
+#     os.system(f"mv {dataset_name}.zip ../data/{dataset_name}.zip")
+#     print(f"Downloaded {dataset_name}.tsf")
+
+#     # Unzip the dataset
+#     os.system(f"unzip -o ../data/{dataset_name}.zip -d ../data/")
+#     print(f"Unzipped {dataset_name}.tsf")
+
+#     # Remove the zip file
+#     os.system(f"rm ../data/{dataset_name}.zip")
+#     os.system(f"rm md5sums.txt")
+
+#     # Convert the tsf file to a pandas dataframe
+#     return convert_tsf_to_dataframe(f"../data/{dataset_name}.tsf")[0]
 
 
 def download_data(dataset_dict):

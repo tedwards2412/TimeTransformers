@@ -53,7 +53,7 @@ def train():
     save = True
     total_training_steps = 2.5e5
     early_stopping = 2.5e5
-    warmup_steps = 1000
+    warmup_steps = 3000
 
     device = torch.device(
         "cuda"
@@ -133,10 +133,14 @@ def train():
     )
 
     train_dataset = TimeSeriesDataset(training_data_list, max_seq_length, train_masks)
-    train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+    train_dataloader = DataLoader(
+        train_dataset, batch_size=batch_size, shuffle=True, num_workers=8
+    )
 
     test_dataset = TimeSeriesDataset(test_data_list, max_seq_length, test_masks)
-    test_dataloader = DataLoader(test_dataset, batch_size=test_batch_size, shuffle=True)
+    test_dataloader = DataLoader(
+        test_dataset, batch_size=test_batch_size, shuffle=True, num_workers=8
+    )
 
     print("Training dataset size: ", train_dataset.__len__())
     print("Test dataset size: ", test_dataset.__len__())
