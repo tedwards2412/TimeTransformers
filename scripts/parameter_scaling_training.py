@@ -118,12 +118,12 @@ def train(config):
 
     train_dataset = TimeSeriesDataset(training_data_list, max_seq_length, train_masks)
     train_dataloader = DataLoader(
-        train_dataset, batch_size=batch_size, shuffle=True, num_workers=4
+        train_dataset, batch_size=batch_size, shuffle=True, num_workers=11
     )
 
     test_dataset = TimeSeriesDataset(test_data_list, max_seq_length, test_masks)
     test_dataloader = DataLoader(
-        test_dataset, batch_size=test_batch_size, shuffle=True, num_workers=4
+        test_dataset, batch_size=test_batch_size, shuffle=True, num_workers=11
     )
 
     print("Training dataset size: ", train_dataset.__len__())

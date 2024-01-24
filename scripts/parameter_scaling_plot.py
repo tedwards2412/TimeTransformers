@@ -1,8 +1,13 @@
 import matplotlib.pyplot as plt
 import json
+import numpy as np
+from scipy.optimize import curve_fit
 
 # color_list = ["purple", "#306B37", "darkgoldenrod", "#3F7BB6", "#BF4145", "#CF630A"]
-color_list = ["#2E4854", "#557B82", "#BAB2A9", "#C98769", "#A1553A", "darkgoldenrod"]
+# color_list = ["#2E4854", "#557B82", "#BAB2A9", "#C98769", "#A1553A", "darkgoldenrod"]
+# color_list = ["#12464F", "#DF543E", "#C8943B", "#378F8C", "#AD9487"]
+# color_list = ["#909B55", "#4B3025", "#AF5D25", "#C3B426", "#C8A895"]
+color_list = ["#4D4D42", "#A0071F", "#2E6C9D", "#5F2E06", "#DF9906"]
 ls_list = ["-", "--", "-.", ":", "-", "--"]
 
 
@@ -22,7 +27,7 @@ def plot_loss():
             model_dict["train_losses"],
             color=color_list[i],
             ls=ls_list[i],
-            alpha=0.4,
+            alpha=0.2,
             zorder=-10,
         )
         plt.plot(
@@ -52,8 +57,29 @@ def parameter_scaling_plot():
 
         min_test_loss.append(min(model_dict["test_losses"]) + 10)
 
+    min_test_loss = np.array(min_test_loss)
+    parameter_count_list = np.array(parameter_count_list)
+
+    # Power law function
+    def power_law(x, loga, b):
+        a = 10**loga
+        return (x / a) ** b
+
+    # Curve fitting
+    params, covariance = curve_fit(
+        power_law, parameter_count_list, min_test_loss, p0=[13, 0.0]
+    )
+
+    # Extracting the parameters
+    a, b = params
+    print("Normalization constant: ", a)
+    print("Power law exponent: ", b)
+
+    N_arr = np.geomspace(5e3, 1e5)
+
     plt.figure(figsize=(8, 6))
     plt.scatter(parameter_count_list, min_test_loss, color=color_list[0])
+    plt.plot(N_arr, power_law(N_arr, a, b), ls="--", color="gray")
     plt.xscale("log")
     plt.yscale("log")
     plt.xlabel("Number of parameters")
