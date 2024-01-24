@@ -107,20 +107,23 @@ def train(config):
     }
     dfs = download_data(datasets_to_load)
 
-    training_data_list, test_data_list, train_masks, test_masks = convert_df_to_numpy(
-        dfs, train_split
-    )
+    (
+        training_data_list,
+        test_data_list,
+        train_masks,
+        test_masks,
+    ) = convert_df_to_numpy(dfs, train_split)
 
     # num_cpus = os.cpu_count()
 
     train_dataset = TimeSeriesDataset(training_data_list, max_seq_length, train_masks)
     train_dataloader = DataLoader(
-        train_dataset, batch_size=batch_size, shuffle=True, num_workers=11
+        train_dataset, batch_size=batch_size, shuffle=True, num_workers=4
     )
 
     test_dataset = TimeSeriesDataset(test_data_list, max_seq_length, test_masks)
     test_dataloader = DataLoader(
-        test_dataset, batch_size=test_batch_size, shuffle=True, num_workers=11
+        test_dataset, batch_size=test_batch_size, shuffle=True, num_workers=4
     )
 
     print("Training dataset size: ", train_dataset.__len__())
@@ -150,7 +153,9 @@ def train(config):
         optimizer, T_max=total_training_steps, eta_min=1e-6
     )
     scheduler = GradualWarmupScheduler(
-        optimizer, total_warmup_steps=warmup_steps, after_scheduler=cosine_scheduler
+        optimizer,
+        total_warmup_steps=warmup_steps,
+        after_scheduler=cosine_scheduler,
     )
     transformer.train()
 
@@ -219,7 +224,8 @@ def train(config):
 
                 if save:
                     torch.save(
-                        transformer.state_dict(), f"transformer-{step_counter}.pt"
+                        transformer.state_dict(),
+                        f"transformer-{step_counter}.pt",
                     )
 
             step_counter += 1

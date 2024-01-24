@@ -64,9 +64,7 @@ class TimeSeriesDataset(Dataset):
         series_mask = self.miss_vals_mask[new_idx]
         if len(series) > self.max_sequence_length:
             # Randomly select a starting point for the sequence
-            start_index = random.randint(
-                0, len(series) - self.max_sequence_length - 1
-            )
+            start_index = random.randint(0, len(series) - self.max_sequence_length - 1)
 
             # Slice the series to get a random subsequence of length max_sequence_length
             train_series = torch.tensor(
@@ -74,15 +72,11 @@ class TimeSeriesDataset(Dataset):
                 dtype=torch.float32,
             ).unsqueeze(-1)
             true_series = torch.tensor(
-                series[
-                    start_index + 1 : start_index + self.max_sequence_length + 1
-                ],
+                series[start_index + 1 : start_index + self.max_sequence_length + 1],
                 dtype=torch.float32,
             )
             missing_vals_batch = torch.tensor(
-                series_mask[
-                    start_index : start_index + self.max_sequence_length
-                ],
+                series_mask[start_index : start_index + self.max_sequence_length],
                 dtype=torch.bool,
             )
             mask = torch.ones_like(train_series, dtype=torch.bool).squeeze(-1)
