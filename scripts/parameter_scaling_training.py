@@ -238,6 +238,7 @@ def train(config):
 
     # Finally, lets save the losses
     file_name = f"results/transformer_{num_params}_training.json"
+    model_file_name = f"results/transformer_{num_params}_model.pt"
     model_info = {
         "num_params": num_params,
         "train_losses": train_losses,
@@ -245,7 +246,14 @@ def train(config):
         "test_losses": test_losses,
         "test_epochs": test_steps,
         "datasets": list(datasets_to_load.keys()),
+        "model_file_name": f"{model_file_name}",
     }
+    # TODO: Eventually we want to save the best model
+    print(f"Saving final model weights to {model_file_name}")
+    torch.save(
+        transformer.state_dict(),
+        f"{model_file_name}.pt",
+    )
     # Writing data to a JSON file
     with open(file_name, "w") as file:
         json.dump(model_info, file, indent=4)
