@@ -170,7 +170,7 @@ def train(config):
     patience_counter = 0
 
     step_counter = 0
-    evaluation_interval = 100
+    evaluation_interval = 500
 
     # Initialize tqdm progress bar
     pbar = tqdm(total=total_training_steps, desc="Training", position=0)
