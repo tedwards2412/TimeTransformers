@@ -186,8 +186,6 @@ def train(config):
             train_losses.append(loss.item())
             train_steps.append(step_counter)
 
-            step_counter += 1
-
             # Update tqdm bar with each step
             pbar.set_description(f"Step {step_counter}: Loss {loss.item():.5f}")
             pbar.update(1)
@@ -197,30 +195,34 @@ def train(config):
             # print(f"Learning Rate = {scheduler.get_lr()[0]}")
             scheduler.step()
 
-        if step_counter % evaluation_interval == 0:
-            transformer.eval()
-            total_test_loss = 0
-            with torch.no_grad():  # Disable gradient calculation
-                for batch in test_dataloader:
-                    train, true, mask = batch
-                    batched_data = train.to(device)
-                    batched_data_true = true.to(device)
-                    output = transformer(batched_data)
-                    test_loss = transformer.Gaussian_loss(output, batched_data_true)
-                    total_test_loss += test_loss.item()
+            if step_counter % evaluation_interval == 0:
+                transformer.eval()
+                total_test_loss = 0
+                with torch.no_grad():  # Disable gradient calculation
+                    for batch in test_dataloader:
+                        train, true, mask = batch
+                        batched_data = train.to(device)
+                        batched_data_true = true.to(device)
+                        output = transformer(batched_data)
+                        test_loss = transformer.Gaussian_loss(output, batched_data_true)
+                        total_test_loss += test_loss.item()
 
-            average_test_loss = total_test_loss / len(test_dataloader)
-            if average_test_loss < min_loss:
-                min_loss = average_test_loss
-                patience_counter = 0
-            else:
-                patience_counter += 1
+                average_test_loss = total_test_loss / len(test_dataloader)
+                if average_test_loss < min_loss:
+                    min_loss = average_test_loss
+                    patience_counter = 0
+                else:
+                    patience_counter += 1
 
-            test_losses.append(average_test_loss)
-            test_steps.append(step_counter)
+                test_losses.append(average_test_loss)
+                test_steps.append(step_counter)
 
-            if save:
-                torch.save(transformer.state_dict(), f"transformer-{step_counter}.pt")
+                if save:
+                    torch.save(
+                        transformer.state_dict(), f"transformer-{step_counter}.pt"
+                    )
+
+            step_counter += 1
 
         if patience_counter > early_stopping:
             print("Early stopping")

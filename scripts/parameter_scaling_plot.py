@@ -7,7 +7,7 @@ ls_list = ["-", "--", "-.", ":", "-", "--"]
 
 
 def plot_loss():
-    parameter_count_list = [1198, 2922, 4850, 7426, 20146, 33570]  # , 165826]
+    parameter_count_list = [8762, 18418, 40418]
 
     plt.figure(figsize=(8, 6))
 
@@ -22,7 +22,8 @@ def plot_loss():
             model_dict["train_losses"],
             color=color_list[i],
             ls=ls_list[i],
-            alpha=0.2,
+            alpha=0.4,
+            zorder=-10,
         )
         plt.plot(
             model_dict["test_epochs"],
@@ -34,13 +35,13 @@ def plot_loss():
 
     plt.legend()
     plt.xlabel("Epoch")
-    plt.ylim(-10, 0)
+    plt.ylim(-5, 5)
     plt.ylabel("Loss")
     plt.savefig("plots/loss.pdf", bbox_inches="tight")
 
 
 def parameter_scaling_plot():
-    parameter_count_list = [1198, 2922, 4850, 7426, 20146, 33570]  # , 165826]
+    parameter_count_list = [8762, 18418, 40418]
     min_test_loss = []
 
     for parameter_count in parameter_count_list:
@@ -56,7 +57,9 @@ def parameter_scaling_plot():
     plt.xscale("log")
     plt.yscale("log")
     plt.xlabel("Number of parameters")
-    plt.ylabel("Minimum Test Loss")
+    plt.ylabel("Minimum Test Loss (+10 to make it positive)")
+    plt.ylim(9e0, 1e1)
+    plt.xlim(5e3, 1e5)
     plt.savefig("plots/parameters_vs_loss.pdf", bbox_inches="tight")
 
 
