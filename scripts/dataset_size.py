@@ -13,10 +13,10 @@ from utils import convert_df_to_numpy
 
 
 def train():
-    train_split = 0.8
+    train_split = 0.95
     max_seq_length = 1024
-    # batch_size = 512
-    # test_batch_size = 1024
+    batch_size = 512
+    test_batch_size = 4096
 
     # First lets download the data and make a data loader
     print("Downloading data...")
@@ -81,16 +81,18 @@ def train():
     )
 
     train_dataset = TimeSeriesDataset(training_data_list, max_seq_length, train_masks)
-    # train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+    train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 
     test_dataset = TimeSeriesDataset(test_data_list, max_seq_length, test_masks)
-    # test_dataloader = DataLoader(test_dataset, batch_size=test_batch_size, shuffle=True)
+    test_dataloader = DataLoader(test_dataset, batch_size=test_batch_size, shuffle=True)
 
     print("Training dataset size: ", train_dataset.__len__())
     print("Test dataset size: ", test_dataset.__len__())
 
     print("Total number of training tokens:", train_dataset.total_length())
     print("Total number of test tokens:", test_dataset.total_length())
+
+    print("testing here:", len(test_dataloader), test_dataloader.__len__())
 
     return None
 

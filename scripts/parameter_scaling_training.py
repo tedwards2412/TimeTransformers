@@ -32,7 +32,7 @@ def train(config):
     save = config["train"]["save"]
     total_training_steps = config["train"]["total_training_steps"]
     early_stopping = config["train"]["early_stopping"]
-    warmup_steps = config["train"]["warmup_steps"]
+    # warmup_steps = config["train"]["warmup_steps"]
 
     # Transformer parameters
     output_dim = config["transformer"]["output_dim"]
@@ -41,6 +41,8 @@ def train(config):
     num_layers = config["transformer"]["num_layers"]
     d_ff = config["transformer"]["d_ff"]
     dropout = config["transformer"]["dropout"]
+    num_distribution_layers = config["transformer"]["num_distribution_layers"]
+    loss_function = config["transformer"]["loss_func"]
 
     device = torch.device(
         "cuda"
@@ -50,6 +52,12 @@ def train(config):
         else "cpu"
     )
     print(f"Using {device}")
+    if device.type == "cuda":
+        num_workers = 11
+    elif device.type == "mps" or device.type == "cpu":
+        num_workers = 6
+
+    print("Number of workers: ", num_workers)
 
     # First lets download the data and make a data loader
     print("Downloading data...")
@@ -118,12 +126,12 @@ def train(config):
 
     train_dataset = TimeSeriesDataset(training_data_list, max_seq_length, train_masks)
     train_dataloader = DataLoader(
-        train_dataset, batch_size=batch_size, shuffle=True, num_workers=11
+        train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers
     )
 
     test_dataset = TimeSeriesDataset(test_data_list, max_seq_length, test_masks)
     test_dataloader = DataLoader(
-        test_dataset, batch_size=test_batch_size, shuffle=True, num_workers=11
+        test_dataset, batch_size=test_batch_size, shuffle=True, num_workers=num_workers
     )
 
     print("Training dataset size: ", train_dataset.__len__())
@@ -142,21 +150,25 @@ def train(config):
         d_ff,
         max_seq_length,
         dropout,
+        num_distribution_layers,
         device=device,
     ).to(device)
     num_params = sum(p.numel() for p in transformer.parameters() if p.requires_grad)
     print("Number of parameters: ", num_params)
 
     # Now lets train it!
-    learning_rate = 1e-3
-    optimizer = optim.AdamW(transformer.parameters(), lr=learning_rate)
-    cosine_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-        optimizer, T_max=total_training_steps, eta_min=1e-6
-    )
-    scheduler = GradualWarmupScheduler(
-        optimizer,
-        total_warmup_steps=warmup_steps,
-        after_scheduler=cosine_scheduler,
+    max_learning_rate = 1e-4
+    optimizer = optim.AdamW(transformer.parameters(), lr=max_learning_rate)
+    # cosine_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+    #     optimizer, T_max=total_training_steps, eta_min=1e-6
+    # )
+    # scheduler = GradualWarmupScheduler(
+    #     optimizer,
+    #     total_warmup_steps=warmup_steps,
+    #     after_scheduler=cosine_scheduler,
+    # )
+    scheduler = torch.optim.lr_scheduler.OneCycleLR(
+        optimizer, max_lr=max_learning_rate, total_steps=total_training_steps
     )
     transformer.train()
 
@@ -171,7 +183,7 @@ def train(config):
     patience_counter = 0
 
     step_counter = 0
-    evaluation_interval = 500
+    evaluation_interval = 100
 
     # Initialize tqdm progress bar
     pbar = tqdm(total=total_training_steps, desc="Training", position=0)
@@ -188,7 +200,11 @@ def train(config):
             batched_data_true = true.to(device)
             optimizer.zero_grad()
             output = transformer(batched_data, custom_mask=mask.to(device))
-            loss = transformer.Gaussian_loss(output, batched_data_true)
+            if loss_function == "Gaussian":
+                print("Gaussian loss")
+                loss = transformer.Gaussian_loss(output, batched_data_true)
+            elif loss_function == "Gaussian_fixed_var":
+                loss = transformer.Gaussian_loss_fixed_var(output, batched_data_true)
             train_losses.append(loss.item())
             train_steps.append(step_counter)
 
@@ -204,16 +220,19 @@ def train(config):
             if step_counter % evaluation_interval == 0:
                 transformer.eval()
                 total_test_loss = 0
+                total_test_samples = 0
                 with torch.no_grad():  # Disable gradient calculation
                     for batch in test_dataloader:
                         train, true, mask = batch
+                        current_batch_size = train.shape[0]
                         batched_data = train.to(device)
                         batched_data_true = true.to(device)
                         output = transformer(batched_data)
                         test_loss = transformer.Gaussian_loss(output, batched_data_true)
-                        total_test_loss += test_loss.item()
+                        total_test_loss += test_loss.item() * current_batch_size
+                        total_test_samples += current_batch_size
 
-                average_test_loss = total_test_loss / len(test_dataloader)
+                average_test_loss = total_test_loss / total_test_samples
                 if average_test_loss < min_loss:
                     min_loss = average_test_loss
                     patience_counter = 0

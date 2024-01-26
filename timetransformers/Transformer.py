@@ -189,8 +189,8 @@ class Decoder_Transformer(nn.Module):
         d_ff,
         max_seq_length,
         dropout,
+        num_distribution_layers,
         device=torch.device("cpu"),
-        num_distribution_layers=2,
     ):
         super(Decoder_Transformer, self).__init__()
         self.device = device
@@ -209,9 +209,15 @@ class Decoder_Transformer(nn.Module):
             ]
         )
         # self.distribution_head = nn.Linear(d_model, output_size).to(device)
-        self.distribution_head = MultiLayerDistributionHead(
-            d_model, num_distribution_layers, dropout, output_size
-        )
+        # self.distribution_head = MultiLayerDistributionHead(
+        #     d_model, num_distribution_layers, dropout, output_size
+        # )
+        self.distribution_heads = [
+            MultiLayerDistributionHead(d_model, num_distribution_layers, dropout, 1).to(
+                device
+            )
+            for _ in range(output_size)
+        ]
         self.dropout = nn.Dropout(dropout).to(device)
 
     def generate_mask(self, src, custom_mask=None):
@@ -254,12 +260,25 @@ class Decoder_Transformer(nn.Module):
         self, transformer_pred, y_true, epsilon=torch.tensor(1e-6, dtype=torch.float32)
     ):
         epsilon = epsilon.to(self.device)
+        print(transformer_pred.shape)
         # Splitting the output into mean and variance
         mean = transformer_pred[:, :, 0]
         var = torch.nn.functional.softplus(transformer_pred[:, :, 1]) + epsilon
 
         # Calculating the Gaussian negative log-likelihood loss
-        # print(y_true, mean, torch.log(var))
+        loss = torch.mean((y_true - mean) ** 2 / var + torch.log(var))
+
+        return loss
+
+    def Gaussian_loss_fixed_var(
+        self, transformer_pred, y_true, epsilon=torch.tensor(1e-6, dtype=torch.float32)
+    ):
+        epsilon = epsilon.to(self.device)
+        # Splitting the output into mean and variance
+        mean = transformer_pred[:, :, 0]
+        var = 0.1
+
+        # Calculating the Gaussian negative log-likelihood loss
         loss = torch.mean((y_true - mean) ** 2 / var + torch.log(var))
 
         return loss
@@ -273,8 +292,11 @@ class Decoder_Transformer(nn.Module):
         for dec_layer in self.decoder_layers:
             src = dec_layer(src, src_mask)
 
-        output = self.distribution_head(src)
-        return output
+        # Splitting the output into mean and variance
+        distribution_outputs = torch.stack(
+            [head(src).squeeze() for head in self.distribution_heads], dim=-1
+        )
+        return distribution_outputs
 
     def generate(self, src, n_sequence):
         # Generate the next n_sequence elements

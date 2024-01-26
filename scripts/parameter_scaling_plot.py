@@ -11,12 +11,18 @@ color_list = ["#4D4D42", "#A0071F", "#2E6C9D", "#5F2E06", "#DF9906"]
 ls_list = ["-", "--", "-.", ":", "-", "--"]
 
 
+def rolling_average(data, window_size):
+    """Calculate the rolling average of a list."""
+    return [
+        sum(data[i : i + window_size]) / window_size
+        for i in range(len(data) - window_size + 1)
+    ]
+
+
 def plot_loss():
-    parameter_count_list = [8762, 18418, 40418]
-
-    plt.figure(figsize=(8, 6))
-
+    parameter_count_list = [8762, 18418, 40418, 133218]
     for i, parameter_count in enumerate(parameter_count_list):
+        plt.figure(figsize=(8, 6))
         file_name = f"results/transformer_{parameter_count}_training.json"
 
         with open(file_name, "r") as file:
@@ -38,6 +44,52 @@ def plot_loss():
             label=f"{parameter_count} parameters",
         )
 
+        plt.legend()
+        plt.xlabel("Epoch")
+        plt.ylim(-5, 5)
+        plt.ylabel("Loss")
+        plt.savefig(f"plots/loss_{parameter_count}.pdf", bbox_inches="tight")
+
+
+def plot_combined_losses():
+    parameter_count_list = [8762, 18418, 40418, 133218]
+    plt.figure(figsize=(8, 6))
+
+    for i, parameter_count in enumerate(parameter_count_list):
+        file_name = f"results/transformer_{parameter_count}_training.json"
+
+        with open(file_name, "r") as file:
+            model_dict = json.load(file)
+
+        plt.plot(
+            model_dict["train_epochs"],
+            model_dict["train_losses"],
+            color=color_list[i],
+            ls=ls_list[i],
+            alpha=0.2,
+            zorder=-10,
+        )
+        # # Set your desired window size for the rolling average
+        # window_size = 20  # You can adjust this value
+
+        # # Calculate rolling average
+        # rolled_avg_losses = rolling_average(
+        #     np.clip(model_dict["test_losses"], -100, 1), window_size
+        # )
+
+        # # Adjust the epochs to match the length of the rolled average array
+        # # (since the first few values don't have a full window)
+        # rolled_avg_epochs = model_dict["test_epochs"][window_size - 1 :]
+        plt.plot(
+            model_dict["test_epochs"],
+            model_dict["test_losses"],
+            # rolled_avg_epochs,
+            # rolled_avg_losses,
+            color=color_list[i],
+            ls=ls_list[i],
+            label=f"{parameter_count} parameters",
+        )
+
     plt.legend()
     plt.xlabel("Epoch")
     plt.ylim(-5, 5)
@@ -45,9 +97,9 @@ def plot_loss():
     plt.savefig("plots/loss.pdf", bbox_inches="tight")
 
 
-def parameter_scaling_plot():
-    parameter_count_list = [8762, 18418, 40418]
+def parameter_test_scaling_plot():
     min_test_loss = []
+    parameter_count_list = [8762, 18418, 40418, 133218]
 
     for parameter_count in parameter_count_list:
         file_name = f"results/transformer_{parameter_count}_training.json"
@@ -75,7 +127,7 @@ def parameter_scaling_plot():
     print("Normalization constant: ", a)
     print("Power law exponent: ", b)
 
-    N_arr = np.geomspace(5e3, 1e5)
+    N_arr = np.geomspace(5e3, 1e6)
 
     plt.figure(figsize=(8, 6))
     plt.scatter(parameter_count_list, min_test_loss, color=color_list[0])
@@ -84,11 +136,57 @@ def parameter_scaling_plot():
     plt.yscale("log")
     plt.xlabel("Number of parameters")
     plt.ylabel("Minimum Test Loss (+10 to make it positive)")
-    plt.ylim(9e0, 1e1)
-    plt.xlim(5e3, 1e5)
+    # plt.ylim(9e0, 1e1)
+    plt.xlim(5e3, 1e6)
     plt.savefig("plots/parameters_vs_loss.pdf", bbox_inches="tight")
 
 
+def parameter_train_scaling_plot():
+    min_test_loss = []
+    parameter_count_list = [8762, 18418, 40418, 133218]
+
+    for parameter_count in parameter_count_list:
+        file_name = f"results/transformer_{parameter_count}_training.json"
+
+        with open(file_name, "r") as file:
+            model_dict = json.load(file)
+
+        min_test_loss.append(min(model_dict["train_losses"]) + 10)
+
+    min_test_loss = np.array(min_test_loss)
+    parameter_count_list = np.array(parameter_count_list)
+
+    # Power law function
+    def power_law(x, loga, b):
+        a = 10**loga
+        return (x / a) ** b
+
+    # Curve fitting
+    params, covariance = curve_fit(
+        power_law, parameter_count_list, min_test_loss, p0=[13, 0.0]
+    )
+
+    # Extracting the parameters
+    a, b = params
+    print("Normalization constant: ", a)
+    print("Power law exponent: ", b)
+
+    N_arr = np.geomspace(5e3, 1e6)
+
+    plt.figure(figsize=(8, 6))
+    plt.scatter(parameter_count_list, min_test_loss, color=color_list[0])
+    plt.plot(N_arr, power_law(N_arr, a, b), ls="--", color="gray")
+    plt.xscale("log")
+    plt.yscale("log")
+    plt.xlabel("Number of parameters")
+    plt.ylabel("Minimum train Loss (+10 to make it positive)")
+    # plt.ylim(9e0, 1e1)
+    plt.xlim(5e3, 1e6)
+    plt.savefig("plots/parameters_vs_train_loss.pdf", bbox_inches="tight")
+
+
 if __name__ == "__main__":
-    parameter_scaling_plot()
+    parameter_test_scaling_plot()
+    parameter_train_scaling_plot()
     plot_loss()
+    plot_combined_losses()
