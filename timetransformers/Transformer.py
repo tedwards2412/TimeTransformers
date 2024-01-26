@@ -260,7 +260,6 @@ class Decoder_Transformer(nn.Module):
         self, transformer_pred, y_true, epsilon=torch.tensor(1e-6, dtype=torch.float32)
     ):
         epsilon = epsilon.to(self.device)
-        print(transformer_pred.shape)
         # Splitting the output into mean and variance
         mean = transformer_pred[:, :, 0]
         var = torch.nn.functional.softplus(transformer_pred[:, :, 1]) + epsilon
@@ -276,7 +275,7 @@ class Decoder_Transformer(nn.Module):
         epsilon = epsilon.to(self.device)
         # Splitting the output into mean and variance
         mean = transformer_pred[:, :, 0]
-        var = 1.0
+        var = torch.tensor(1.0, dtype=torch.float32).to(self.device)
 
         # Calculating the Gaussian negative log-likelihood loss
         loss = torch.mean((y_true - mean) ** 2 / var + torch.log(var))

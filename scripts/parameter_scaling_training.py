@@ -183,7 +183,7 @@ def train(config):
     patience_counter = 0
 
     step_counter = 0
-    evaluation_interval = 100
+    evaluation_interval = 500
 
     # Initialize tqdm progress bar
     pbar = tqdm(total=total_training_steps, desc="Training", position=0)
@@ -201,7 +201,6 @@ def train(config):
             optimizer.zero_grad()
             output = transformer(batched_data, custom_mask=mask.to(device))
             if loss_function == "Gaussian":
-                print("Gaussian loss")
                 loss = transformer.Gaussian_loss(output, batched_data_true)
             elif loss_function == "Gaussian_fixed_var":
                 loss = transformer.Gaussian_loss_fixed_var(output, batched_data_true)
@@ -214,7 +213,6 @@ def train(config):
 
             loss.backward()
             optimizer.step()
-            # print(f"Learning Rate = {scheduler.get_lr()[0]}")
             scheduler.step()
 
             if step_counter % evaluation_interval == 0:
@@ -257,8 +255,8 @@ def train(config):
     pbar.close()
 
     # Finally, lets save the losses
-    file_name = f"results/transformer_{num_params}_training.json"
-    model_file_name = f"results/transformer_{num_params}_model.pt"
+    file_name = f"results/transformer_{num_params}_{loss_function}_training.json"
+    model_file_name = f"results/transformer_{num_params}_{loss_function}_model.pt"
     model_info = {
         "num_params": num_params,
         "train_losses": train_losses,
