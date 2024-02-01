@@ -208,10 +208,9 @@ class Decoder_Transformer(nn.Module):
                 for _ in range(num_layers)
             ]
         )
-        # self.distribution_head = nn.Linear(d_model, output_size).to(device)
-        # self.distribution_head = MultiLayerDistributionHead(
-        #     d_model, num_distribution_layers, dropout, output_size
-        # )
+        self.distribution_head = MultiLayerDistributionHead(
+            d_model, num_distribution_layers, dropout, output_size
+        )
         self.distribution_heads = [
             MultiLayerDistributionHead(d_model, num_distribution_layers, dropout, 1).to(
                 device
@@ -292,10 +291,12 @@ class Decoder_Transformer(nn.Module):
             src = dec_layer(src, src_mask)
 
         # Splitting the output into mean and variance
-        distribution_outputs = torch.stack(
-            [head(src).squeeze() for head in self.distribution_heads], dim=-1
-        )
-        return distribution_outputs
+        # distribution_outputs = torch.stack(
+        #     [head(src).squeeze(-1) for head in self.distribution_heads], dim=-1
+        # )
+        # return distribution_outputs
+        output = self.distribution_head(src)
+        return output
 
     def generate(self, src, n_sequence):
         # Generate the next n_sequence elements

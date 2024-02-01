@@ -19,8 +19,41 @@ def rolling_average(data, window_size):
     ]
 
 
+def plot_loss_small_models():
+    parameter_count = 8672
+    string_list = ["Gaussian", "Gaussian_fixed_var"]
+    for i, s in enumerate(string_list):
+        plt.figure(figsize=(8, 6))
+        file_name = f"results/transformer_{parameter_count}_{s}_training.json"
+
+        with open(file_name, "r") as file:
+            model_dict = json.load(file)
+
+        plt.plot(
+            model_dict["train_epochs"],
+            model_dict["train_losses"],
+            color=color_list[i],
+            ls=ls_list[i],
+            alpha=0.2,
+            zorder=-10,
+        )
+        plt.plot(
+            model_dict["test_epochs"],
+            model_dict["test_losses"],
+            color=color_list[i],
+            ls=ls_list[i],
+            label=f"{parameter_count} parameters",
+        )
+
+        plt.legend()
+        plt.xlabel("Epoch")
+        plt.ylim(-2, 10)
+        plt.ylabel("Loss")
+        plt.savefig(f"plots/loss_{parameter_count}_{s}.pdf", bbox_inches="tight")
+
+
 def plot_loss():
-    parameter_count_list = [8762, 18418, 40418, 133218]
+    parameter_count_list = [8762]  # , 18418, 40418, 133218]
     for i, parameter_count in enumerate(parameter_count_list):
         plt.figure(figsize=(8, 6))
         file_name = f"results/transformer_{parameter_count}_training.json"
@@ -186,7 +219,8 @@ def parameter_train_scaling_plot():
 
 
 if __name__ == "__main__":
-    parameter_test_scaling_plot()
-    parameter_train_scaling_plot()
-    plot_loss()
-    plot_combined_losses()
+    plot_loss_small_models()
+    # parameter_test_scaling_plot()
+    # parameter_train_scaling_plot()
+    # plot_loss()
+    # plot_combined_losses()

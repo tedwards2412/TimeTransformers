@@ -32,7 +32,7 @@ def train(config):
     save = config["train"]["save"]
     total_training_steps = config["train"]["total_training_steps"]
     early_stopping = config["train"]["early_stopping"]
-    # warmup_steps = config["train"]["warmup_steps"]
+    warmup_steps = config["train"]["warmup_steps"]
 
     # Transformer parameters
     output_dim = config["transformer"]["output_dim"]
@@ -57,6 +57,14 @@ def train(config):
     elif device.type == "mps" or device.type == "cpu":
         num_workers = 6
 
+    # kaggle_web_traffic_dataset_without_missing_values
+    # m4_daily_dataset
+    # m4_monthly_dataset
+    # m4_weekly_dataset
+    # bitcoin_dataset_without_missing_values
+    # cif_2016_dataset
+    # dominick_dataset
+
     print("Number of workers: ", num_workers)
 
     # First lets download the data and make a data loader
@@ -65,10 +73,10 @@ def train(config):
         # Finance
         "nn5_weekly_dataset": "10.5281/zenodo.4656125",
         "nn5_daily_dataset_without_missing_values": "10.5281/zenodo.4656117",
-        "bitcoin_dataset_without_missing_values": "10.5281/zenodo.5122101",
-        "cif_2016_dataset": "10.5281/zenodo.4656042",
+        # "bitcoin_dataset_without_missing_values": "10.5281/zenodo.5122101",
+        # "cif_2016_dataset": "10.5281/zenodo.4656042",
         "fred_md_dataset": "10.5281/zenodo.4654833",
-        "dominick_dataset": "10.5281/zenodo.4654802",
+        # "dominick_dataset": "10.5281/zenodo.4654802",
         # Health
         "covid_mobility_dataset_without_missing_values": "10.5281/zenodo.4663809",
         "kdd_cup_2018_dataset_without_missing_values": "10.5281/zenodo.4656756",
@@ -77,9 +85,9 @@ def train(config):
         "hospital_dataset": "10.5281/zenodo.4656014",
         # General
         "m4_hourly_dataset": "10.5281/zenodo.4656589",
-        "m4_daily_dataset": "10.5281/zenodo.4656548",
-        "m4_weekly_dataset": "10.5281/zenodo.4656522",
-        "m4_monthly_dataset": "10.5281/zenodo.4656480",
+        # "m4_daily_dataset": "10.5281/zenodo.4656548",
+        # "m4_weekly_dataset": "10.5281/zenodo.4656522",
+        # "m4_monthly_dataset": "10.5281/zenodo.4656480",
         "m4_quarterly_dataset": "10.5281/zenodo.4656410",
         "m4_yearly_dataset": "10.5281/zenodo.4656379",
         "electricity_weekly_dataset": "10.5281/zenodo.4656141",
@@ -102,15 +110,14 @@ def train(config):
         "saugeenday_dataset": "10.5281/zenodo.4656058",
         "wind_farms_minutely_dataset_without_missing_values": "10.5281/zenodo.4654858",
         # Traffic
-        "kaggle_web_traffic_weekly_dataset": "10.5281/zenodo.4656664",
-        "kaggle_web_traffic_dataset_without_missing_values": "10.5281/zenodo.4656075",
         "pedestrian_counts_dataset": "10.5281/zenodo.4656626",
         "traffic_weekly_dataset": "10.5281/zenodo.4656135",
         "traffic_hourly_dataset": "10.5281/zenodo.4656132",
         "rideshare_dataset_without_missing_values": "10.5281/zenodo.5122232",
         "vehicle_trips_dataset_without_missing_values": "10.5281/zenodo.5122537",
         # Web
-        "kaggle_web_traffic_dataset_without_missing_values": "10.5281/zenodo.4656075",
+        "kaggle_web_traffic_weekly_dataset": "10.5281/zenodo.4656664",
+        # "kaggle_web_traffic_dataset_without_missing_values": "10.5281/zenodo.4656075",
         "london_smart_meters_dataset_with_missing_values": "10.5281/zenodo.4656072",
     }
     dfs = download_data(datasets_to_load)
@@ -157,19 +164,19 @@ def train(config):
     print("Number of parameters: ", num_params)
 
     # Now lets train it!
-    max_learning_rate = 1e-4
+    max_learning_rate = 1e-3
     optimizer = optim.AdamW(transformer.parameters(), lr=max_learning_rate)
-    # cosine_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-    #     optimizer, T_max=total_training_steps, eta_min=1e-6
-    # )
-    # scheduler = GradualWarmupScheduler(
-    #     optimizer,
-    #     total_warmup_steps=warmup_steps,
-    #     after_scheduler=cosine_scheduler,
-    # )
-    scheduler = torch.optim.lr_scheduler.OneCycleLR(
-        optimizer, max_lr=max_learning_rate, total_steps=total_training_steps
+    cosine_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+        optimizer, T_max=total_training_steps, eta_min=1e-6
     )
+    scheduler = GradualWarmupScheduler(
+        optimizer,
+        total_warmup_steps=warmup_steps,
+        after_scheduler=cosine_scheduler,
+    )
+    # scheduler = torch.optim.lr_scheduler.OneCycleLR(
+    #     optimizer, max_lr=max_learning_rate, total_steps=total_training_steps
+    # )
     transformer.train()
 
     train_steps = []
@@ -204,6 +211,7 @@ def train(config):
                 loss = transformer.Gaussian_loss(output, batched_data_true)
             elif loss_function == "Gaussian_fixed_var":
                 loss = transformer.Gaussian_loss_fixed_var(output, batched_data_true)
+            print(f"Train losses: {loss.item()}")
             train_losses.append(loss.item())
             train_steps.append(step_counter)
 
