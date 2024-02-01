@@ -184,8 +184,7 @@ def train(config):
     if use_wandb:
         wandb.init(
             project="timetransformers",
-            project="my-awesome-project",
-            # entity="tedwards2412",
+            entity="timetransformers",
             name=f"transformer_{num_params}_{loss_function}_electricity_only",
             config={
                 "max_learning_rate": max_learning_rate,
