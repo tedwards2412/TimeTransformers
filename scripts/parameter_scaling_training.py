@@ -184,12 +184,13 @@ def train(config):
     # )
 
     if use_wandb:
-        wandb.init(project="timetransformers", entity="tedwards2412")
-        wandb.config.update(
+        wandb.init(
+            project="timetransformers",
+            entity="tedwards2412",
             config={
                 "max_learning_rate": max_learning_rate,
                 "Nparams": num_params,
-            }
+            },
         )
     transformer.train()
 
