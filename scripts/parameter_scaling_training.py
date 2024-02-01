@@ -164,7 +164,8 @@ def train(config):
     print("Number of parameters: ", num_params)
 
     # Now lets train it!
-    max_learning_rate = 1e-3
+    # max_learning_rate = 1e-3
+    max_learning_rate = 0.003239 - 0.0001395 * torch.log(num_params)
     optimizer = optim.AdamW(transformer.parameters(), lr=max_learning_rate)
     cosine_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
         optimizer, T_max=total_training_steps, eta_min=1e-6
