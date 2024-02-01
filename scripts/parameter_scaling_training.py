@@ -8,6 +8,7 @@ import yaml
 import argparse
 import json
 import numpy as np
+import wandb
 
 # This is just until temporary implementation
 import os
@@ -44,6 +45,7 @@ def train(config):
     dropout = config["transformer"]["dropout"]
     num_distribution_layers = config["transformer"]["num_distribution_layers"]
     loss_function = config["transformer"]["loss_func"]
+    use_wandb = True
 
     device = torch.device(
         "cuda"
@@ -180,6 +182,15 @@ def train(config):
     # scheduler = torch.optim.lr_scheduler.OneCycleLR(
     #     optimizer, max_lr=max_learning_rate, total_steps=total_training_steps
     # )
+
+    if use_wandb:
+        wandb.init(project="timetransformers", entity="tedwards2412")
+        wandb.config.update(
+            config={
+                "max_learning_rate": max_learning_rate,
+                "Nparams": num_params,
+            }
+        )
     transformer.train()
 
     train_steps = []
@@ -214,11 +225,12 @@ def train(config):
                 loss = transformer.Gaussian_loss(output, batched_data_true)
             elif loss_function == "Gaussian_fixed_var":
                 loss = transformer.Gaussian_loss_fixed_var(output, batched_data_true)
-            print(f"Train losses: {loss.item()}")
+
             train_losses.append(loss.item())
             train_steps.append(step_counter)
 
             # Update tqdm bar with each step
+            wandb.log({"train_loss": loss.item(), "step": step_counter})
             pbar.set_description(f"Step {step_counter}: Loss {loss.item():.5f}")
             pbar.update(1)
 
@@ -250,6 +262,7 @@ def train(config):
 
                 test_losses.append(average_test_loss)
                 test_steps.append(step_counter)
+                wandb.log({"test_loss": average_test_loss, "step": step_counter})
 
                 if save:
                     torch.save(
