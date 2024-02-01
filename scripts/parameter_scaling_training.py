@@ -50,9 +50,7 @@ def train(config):
     device = torch.device(
         "cuda"
         if torch.cuda.is_available()
-        else "mps"
-        if torch.backends.mps.is_available()
-        else "cpu"
+        else "mps" if torch.backends.mps.is_available() else "cpu"
     )
     print(f"Using {device}")
     if device.type == "cuda":
@@ -186,7 +184,8 @@ def train(config):
     if use_wandb:
         wandb.init(
             project="timetransformers",
-            entity="tedwards2412",
+            project="my-awesome-project",
+            # entity="tedwards2412",
             name=f"transformer_{num_params}_{loss_function}_electricity_only",
             config={
                 "max_learning_rate": max_learning_rate,
