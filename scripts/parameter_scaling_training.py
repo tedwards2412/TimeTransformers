@@ -251,7 +251,17 @@ def train(config):
                         batched_data = train.to(device)
                         batched_data_true = true.to(device)
                         output = transformer(batched_data)
-                        test_loss = transformer.Gaussian_loss(output, batched_data_true)
+                        if loss_function == "Gaussian":
+                            test_loss = transformer.Gaussian_loss(
+                                output, batched_data_true
+                            )
+                        elif loss_function == "Gaussian_fixed_var":
+                            test_loss = transformer.Gaussian_loss_fixed_var(
+                                output, batched_data_true
+                            )
+                        elif loss_function == "MSE":
+                            test_loss = transformer.MSE(output, batched_data_true)
+
                         total_test_loss += test_loss.item() * current_batch_size
                         total_test_samples += current_batch_size
 
