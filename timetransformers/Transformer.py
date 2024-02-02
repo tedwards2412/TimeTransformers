@@ -281,6 +281,16 @@ class Decoder_Transformer(nn.Module):
 
         return loss
 
+    def MSE(self, transformer_pred, y_true):
+        # Splitting the output into mean and variance
+        mean = transformer_pred[:, :, 0]
+        # var = torch.tensor(1.0, dtype=torch.float32).to(self.device)
+
+        # Calculating the Gaussian negative log-likelihood loss
+        loss = torch.mean((y_true - mean) ** 2)
+
+        return loss
+
     def forward(self, src, custom_mask=None):
         src_mask = self.generate_mask(src, custom_mask=custom_mask)
         src = self.embedding_layer(src)

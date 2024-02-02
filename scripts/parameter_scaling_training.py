@@ -225,6 +225,8 @@ def train(config):
                 loss = transformer.Gaussian_loss(output, batched_data_true)
             elif loss_function == "Gaussian_fixed_var":
                 loss = transformer.Gaussian_loss_fixed_var(output, batched_data_true)
+            elif loss_function == "MSE":
+                loss = transformer.MSE(output, batched_data_true)
 
             train_losses.append(loss.item())
             train_steps.append(step_counter)
