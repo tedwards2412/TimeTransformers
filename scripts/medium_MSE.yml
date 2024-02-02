@@ -16,4 +16,4 @@ transformer:
   d_ff: 16
   dropout: 0.1
   num_distribution_layers: 4
-  loss_func: "MSE" # Should be Gaussian or Gaussian_fixed_var
+  loss_func: "MSE" # Should be Gaussian, Gaussian_fixed_var, or MSE
