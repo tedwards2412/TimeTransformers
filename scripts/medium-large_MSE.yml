@@ -12,7 +12,7 @@ transformer:
   output_dim: 1
   d_model: 32
   num_heads: 1
-  num_layers: 3
+  num_layers: 2
   d_ff: 32
   dropout: 0.1
   num_distribution_layers: 4
