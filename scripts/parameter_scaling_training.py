@@ -113,7 +113,7 @@ def train(config):
         # Traffic
         # "pedestrian_counts_dataset": "10.5281/zenodo.4656626",
         # "traffic_weekly_dataset": "10.5281/zenodo.4656135",
-        # "traffic_hourly_dataset": "10.5281/zenodo.4656132",
+        "traffic_hourly_dataset": "10.5281/zenodo.4656132",
         # "rideshare_dataset_without_missing_values": "10.5281/zenodo.5122232",
         # "vehicle_trips_dataset_without_missing_values": "10.5281/zenodo.5122537",
         # Web
@@ -185,7 +185,7 @@ def train(config):
         wandb.init(
             project="timetransformers",
             entity="timetransformers",
-            name=f"transformer_{num_params}_{loss_function}_electricity_only",
+            name=f"transformer_{num_params}_{loss_function}_electricity_traffic",
             config={
                 "max_learning_rate": max_learning_rate,
                 "Nparams": num_params,
