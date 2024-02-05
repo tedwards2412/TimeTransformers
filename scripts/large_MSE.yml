@@ -10,10 +10,10 @@ train:
 
 transformer:
   output_dim: 1
-  d_model: 32
+  d_model: 64
   num_heads: 1
   num_layers: 3
   d_ff: 32
   dropout: 0.1
   num_distribution_layers: 4
-  loss_func: "MSE" # Should be Gaussian, Gaussian_fixed_var, or MSE
+  loss_func: "MSE" # Should be Gaussian or Gaussian_fixed_var
