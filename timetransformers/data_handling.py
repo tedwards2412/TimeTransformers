@@ -143,26 +143,63 @@ def download_single_datafile(dataset_name, dataset_id):
     return convert_tsf_to_dataframe(f"../data/{dataset_name}.tsf")[0]
 
 
-# def download_single_datafile(dataset_name, dataset_id):
-#     os.system(f"zenodo_get {dataset_id}")
-#     os.system(f"mv {dataset_name}.zip ../data/{dataset_name}.zip")
-#     print(f"Downloaded {dataset_name}.tsf")
-
-#     # Unzip the dataset
-#     os.system(f"unzip -o ../data/{dataset_name}.zip -d ../data/")
-#     print(f"Unzipped {dataset_name}.tsf")
-
-#     # Remove the zip file
-#     os.system(f"rm ../data/{dataset_name}.zip")
-#     os.system(f"rm md5sums.txt")
-
-#     # Convert the tsf file to a pandas dataframe
-#     return convert_tsf_to_dataframe(f"../data/{dataset_name}.tsf")[0]
-
-
-def download_data(dataset_dict):
+def download_data(dataset_names):
     df_list = []
-    for dataset_name, dataset_id in dataset_dict.items():
+    for dataset_name in dataset_names:
+        dataset_id = dataset_dict[dataset_name]
         df_list.append(download_single_datafile(dataset_name, dataset_id))
 
     return df_list
+
+
+dataset_dict = {
+    # Finance
+    "nn5_weekly_dataset": "10.5281/zenodo.4656125",
+    "nn5_daily_dataset_without_missing_values": "10.5281/zenodo.4656117",
+    "bitcoin_dataset_without_missing_values": "10.5281/zenodo.5122101",
+    "cif_2016_dataset": "10.5281/zenodo.4656042",
+    "fred_md_dataset": "10.5281/zenodo.4654833",
+    "dominick_dataset": "10.5281/zenodo.4654802",
+    # Health
+    "covid_mobility_dataset_without_missing_values": "10.5281/zenodo.4663809",
+    "kdd_cup_2018_dataset_without_missing_values": "10.5281/zenodo.4656756",
+    "covid_deaths_dataset": "10.5281/zenodo.4656009",
+    "us_births_dataset": "10.5281/zenodo.4656049",
+    "hospital_dataset": "10.5281/zenodo.4656014",
+    # General
+    "m4_hourly_dataset": "10.5281/zenodo.4656589",
+    "m4_daily_dataset": "10.5281/zenodo.4656548",
+    "m4_weekly_dataset": "10.5281/zenodo.4656522",
+    "m4_monthly_dataset": "10.5281/zenodo.4656480",
+    "m4_quarterly_dataset": "10.5281/zenodo.4656410",
+    "m4_yearly_dataset": "10.5281/zenodo.4656379",
+    "electricity_weekly_dataset": "10.5281/zenodo.4656141",
+    "electricity_hourly_dataset": "10.5281/zenodo.4656140",
+    "australian_electricity_demand_dataset": "10.5281/zenodo.4659727",
+    "tourism_yearly_dataset": "10.5281/zenodo.4656103",
+    "tourism_monthly_dataset": "10.5281/zenodo.4656096",
+    "tourism_quarterly_dataset": "10.5281/zenodo.4656093",
+    "elecdemand_dataset": "10.5281/zenodo.4656069",
+    "car_parts_dataset_without_missing_values": "10.5281/zenodo.4656021",
+    # Weather
+    "oikolab_weather_dataset": "10.5281/zenodo.5184708",
+    "sunspot_dataset_without_missing_values": "10.5281/zenodo.4654722",
+    "solar_4_seconds_dataset": "10.5281/zenodo.4656027",
+    "wind_4_seconds_dataset": "10.5281/zenodo.4656032",
+    "weather_dataset": "10.5281/zenodo.4654822",
+    "temperature_rain_dataset_without_missing_values": "10.5281/zenodo.5129091",
+    "solar_weekly_dataset": "10.5281/zenodo.4656151",
+    "solar_10_minutes_dataset": "10.5281/zenodo.4656144",
+    "saugeenday_dataset": "10.5281/zenodo.4656058",
+    "wind_farms_minutely_dataset_without_missing_values": "10.5281/zenodo.4654858",
+    # Traffic
+    "pedestrian_counts_dataset": "10.5281/zenodo.4656626",
+    "traffic_weekly_dataset": "10.5281/zenodo.4656135",
+    "traffic_hourly_dataset": "10.5281/zenodo.4656132",
+    "rideshare_dataset_without_missing_values": "10.5281/zenodo.5122232",
+    "vehicle_trips_dataset_without_missing_values": "10.5281/zenodo.5122537",
+    # Web
+    "kaggle_web_traffic_weekly_dataset": "10.5281/zenodo.4656664",
+    "kaggle_web_traffic_dataset_without_missing_values": "10.5281/zenodo.4656075",
+    "london_smart_meters_dataset_with_missing_values": "10.5281/zenodo.4656072",
+}

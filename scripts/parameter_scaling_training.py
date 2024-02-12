@@ -31,10 +31,10 @@ def train(config):
     max_seq_length = config["train"]["max_seq_length"]
     batch_size = config["train"]["batch_size"]
     test_batch_size = config["train"]["test_batch_size"]
-    save = config["train"]["save"]
     total_training_steps = config["train"]["total_training_steps"]
     early_stopping = config["train"]["early_stopping"]
     warmup_steps = config["train"]["warmup_steps"]
+    evaluation_interval = config["train"]["evaluation_interval"]
 
     # Transformer parameters
     output_dim = config["transformer"]["output_dim"]
@@ -45,7 +45,9 @@ def train(config):
     dropout = config["transformer"]["dropout"]
     num_distribution_layers = config["transformer"]["num_distribution_layers"]
     loss_function = config["transformer"]["loss_func"]
-    use_wandb = True
+
+    # Datasets
+    datasets_to_load = config["datasets"]
 
     device = torch.device(
         "cuda"
@@ -58,93 +60,10 @@ def train(config):
     elif device.type == "mps" or device.type == "cpu":
         num_workers = 6
 
-    # kaggle_web_traffic_dataset_without_missing_values
-    # m4_daily_dataset
-    # m4_monthly_dataset
-    # m4_weekly_dataset
-    # bitcoin_dataset_without_missing_values
-    # cif_2016_dataset
-    # dominick_dataset
-
     print("Number of workers: ", num_workers)
 
     # First lets download the data and make a data loader
     print("Downloading data...")
-    # datasets_to_load = {
-    #     # Finance
-    #     # "nn5_weekly_dataset": "10.5281/zenodo.4656125",
-    #     # "nn5_daily_dataset_without_missing_values": "10.5281/zenodo.4656117",
-    #     # "bitcoin_dataset_without_missing_values": "10.5281/zenodo.5122101",
-    #     # "cif_2016_dataset": "10.5281/zenodo.4656042",
-    #     # "fred_md_dataset": "10.5281/zenodo.4654833",
-    #     # "dominick_dataset": "10.5281/zenodo.4654802",
-    #     # Health
-    #     # "covid_mobility_dataset_without_missing_values": "10.5281/zenodo.4663809",
-    #     # "kdd_cup_2018_dataset_without_missing_values": "10.5281/zenodo.4656756",
-    #     # "covid_deaths_dataset": "10.5281/zenodo.4656009",
-    #     # "us_births_dataset": "10.5281/zenodo.4656049",
-    #     # "hospital_dataset": "10.5281/zenodo.4656014",
-    #     # General
-    #     # "m4_hourly_dataset": "10.5281/zenodo.4656589",
-    #     # "m4_daily_dataset": "10.5281/zenodo.4656548",
-    #     # "m4_weekly_dataset": "10.5281/zenodo.4656522",
-    #     # "m4_monthly_dataset": "10.5281/zenodo.4656480",
-    #     # "m4_quarterly_dataset": "10.5281/zenodo.4656410",
-    #     # "m4_yearly_dataset": "10.5281/zenodo.4656379",
-    #     # "electricity_weekly_dataset": "10.5281/zenodo.4656141",
-    #     "electricity_hourly_dataset": "10.5281/zenodo.4656140",
-    #     # "australian_electricity_demand_dataset": "10.5281/zenodo.4659727",
-    #     # "tourism_yearly_dataset": "10.5281/zenodo.4656103",
-    #     # "tourism_monthly_dataset": "10.5281/zenodo.4656096",
-    #     # "tourism_quarterly_dataset": "10.5281/zenodo.4656093",
-    #     # "elecdemand_dataset": "10.5281/zenodo.4656069",
-    #     # "car_parts_dataset_without_missing_values": "10.5281/zenodo.4656021",
-    #     # Weather
-    #     # "oikolab_weather_dataset": "10.5281/zenodo.5184708",
-    #     # "sunspot_dataset_without_missing_values": "10.5281/zenodo.4654722",
-    #     # "solar_4_seconds_dataset": "10.5281/zenodo.4656027",
-    #     # "wind_4_seconds_dataset": "10.5281/zenodo.4656032",
-    #     # "weather_dataset": "10.5281/zenodo.4654822",
-    #     # "temperature_rain_dataset_without_missing_values": "10.5281/zenodo.5129091",
-    #     # "solar_weekly_dataset": "10.5281/zenodo.4656151",
-    #     # "solar_10_minutes_dataset": "10.5281/zenodo.4656144",
-    #     # "saugeenday_dataset": "10.5281/zenodo.4656058",
-    #     # "wind_farms_minutely_dataset_without_missing_values": "10.5281/zenodo.4654858",
-    #     # Traffic
-    #     # "pedestrian_counts_dataset": "10.5281/zenodo.4656626",
-    #     # "traffic_weekly_dataset": "10.5281/zenodo.4656135",
-    #     "traffic_hourly_dataset": "10.5281/zenodo.4656132",
-    #     # "rideshare_dataset_without_missing_values": "10.5281/zenodo.5122232",
-    #     # "vehicle_trips_dataset_without_missing_values": "10.5281/zenodo.5122537",
-    #     # Web
-    #     # "kaggle_web_traffic_weekly_dataset": "10.5281/zenodo.4656664",
-    #     # "kaggle_web_traffic_dataset_without_missing_values": "10.5281/zenodo.4656075",
-    #     # "london_smart_meters_dataset_with_missing_values": "10.5281/zenodo.4656072",
-    # }
-
-    datasets_to_load = {
-        "electricity_hourly_dataset": "10.5281/zenodo.4656140",
-        "traffic_hourly_dataset": "10.5281/zenodo.4656132",
-        "traffic_weekly_dataset": "10.5281/zenodo.4656135",
-        "solar_4_seconds_dataset": "10.5281/zenodo.4656027",
-        "solar_weekly_dataset": "10.5281/zenodo.4656151",
-        "solar_10_minutes_dataset": "10.5281/zenodo.4656144",
-        "wind_4_seconds_dataset": "10.5281/zenodo.4656032",
-        "oikolab_weather_dataset": "10.5281/zenodo.5184708",
-        "nn5_weekly_dataset": "10.5281/zenodo.4656125",
-        "nn5_daily_dataset_without_missing_values": "10.5281/zenodo.4656117",
-        "cif_2016_dataset": "10.5281/zenodo.4656042",
-        "fred_md_dataset": "10.5281/zenodo.4654833",
-        "hospital_dataset": "10.5281/zenodo.4656014",
-        "m4_hourly_dataset": "10.5281/zenodo.4656589",
-        "electricity_weekly_dataset": "10.5281/zenodo.4656141",
-        "australian_electricity_demand_dataset": "10.5281/zenodo.4659727",
-        "tourism_monthly_dataset": "10.5281/zenodo.4656096",
-        "tourism_quarterly_dataset": "10.5281/zenodo.4656093",
-        "elecdemand_dataset": "10.5281/zenodo.4656069",
-        "sunspot_dataset_without_missing_values": "10.5281/zenodo.4654722",
-        "wind_4_seconds_dataset": "10.5281/zenodo.4656032",
-    }
     dfs = download_data(datasets_to_load)
 
     (
@@ -153,8 +72,6 @@ def train(config):
         train_masks,
         test_masks,
     ) = convert_df_to_numpy(dfs, train_split)
-
-    # num_cpus = os.cpu_count()
 
     train_dataset = TimeSeriesDataset(training_data_list, max_seq_length, train_masks)
     train_dataloader = DataLoader(
@@ -189,7 +106,6 @@ def train(config):
     print("Number of parameters: ", num_params)
 
     # Now lets train it!
-    # max_learning_rate = 1e-3
     max_learning_rate = 0.003239 - 0.0001395 * np.log(num_params)
     print(f"Max learning rate: {max_learning_rate}")
     optimizer = optim.AdamW(transformer.parameters(), lr=max_learning_rate)
@@ -201,34 +117,25 @@ def train(config):
         total_warmup_steps=warmup_steps,
         after_scheduler=cosine_scheduler,
     )
-    # scheduler = torch.optim.lr_scheduler.OneCycleLR(
-    #     optimizer, max_lr=max_learning_rate, total_steps=total_training_steps
-    # )
 
-    if use_wandb:
-        wandb.init(
-            project="timetransformers",
-            entity="timetransformers",
-            name=f"transformer_{num_params}_{loss_function}_{train_dataset.total_length()}",
-            config={
-                "max_learning_rate": max_learning_rate,
-                "Nparams": num_params,
-            },
-        )
-    transformer.train()
+    config["max_learning_rate"] = max_learning_rate
+    config["Nparams"] = num_params
+
+    wandb.init(
+        project="timetransformers",
+        entity="timetransformers",
+        name=f"transformer_{num_params}_{loss_function}_{train_dataset.total_length()}",
+        config=config,
+    )
 
     train_steps = []
     train_losses = []
-
     test_steps = []
     test_losses = []
 
-    transformer.train()
     min_loss = 1e10
     patience_counter = 0
-
     step_counter = 0
-    evaluation_interval = 500
 
     # Initialize tqdm progress bar
     pbar = tqdm(total=total_training_steps, desc="Training", position=0)
@@ -245,6 +152,7 @@ def train(config):
             batched_data_true = true.to(device)
             optimizer.zero_grad()
             output = transformer(batched_data, custom_mask=mask.to(device))
+
             if loss_function == "Gaussian":
                 loss = transformer.Gaussian_loss(output, batched_data_true)
             elif loss_function == "Gaussian_fixed_var":
@@ -300,10 +208,10 @@ def train(config):
                 test_steps.append(step_counter)
                 wandb.log({"test_loss": average_test_loss, "step": step_counter})
 
-                if save:
+                if average_test_loss < min_loss:
                     torch.save(
                         transformer.state_dict(),
-                        f"transformer-{step_counter}.pt",
+                        f"results/transformer_{num_params}_{loss_function}_best.pt",
                     )
 
             step_counter += 1
@@ -316,25 +224,26 @@ def train(config):
 
     # Finally, lets save the losses
     file_name = f"results/transformer_{num_params}_{loss_function}_training.json"
-    model_file_name = f"results/transformer_{num_params}_{loss_function}_model.pt"
-    model_info = {
-        "num_params": num_params,
+    model_file_name = f"results/transformer_{num_params}_{loss_function}_final.pt"
+    train_info = {
         "train_losses": train_losses,
         "train_epochs": train_steps,
         "test_losses": test_losses,
         "test_epochs": test_steps,
-        "datasets": list(datasets_to_load.keys()),
         "model_file_name": f"{model_file_name}",
     }
-    # TODO: Eventually we want to save the best model
     print(f"Saving final model weights to {model_file_name}")
     torch.save(
         transformer.state_dict(),
         f"{model_file_name}.pt",
     )
+
     # Writing data to a JSON file
+    full_train_info = config | train_info
     with open(file_name, "w") as file:
-        json.dump(model_info, file, indent=4)
+        json.dump(full_train_info, file, indent=4)
+
+    wandb.finish()
 
     return None
 
