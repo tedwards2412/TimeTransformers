@@ -176,6 +176,7 @@ def train(config):
                 transformer.eval()
                 total_test_loss = 0
                 total_test_samples = 0
+
                 with torch.no_grad():  # Disable gradient calculation
                     for batch in test_dataloader:
                         train, true, mask = batch
@@ -183,6 +184,7 @@ def train(config):
                         batched_data = train.to(device)
                         batched_data_true = true.to(device)
                         output = transformer(batched_data)
+
                         if loss_function == "Gaussian":
                             test_loss = transformer.Gaussian_loss(
                                 output, batched_data_true

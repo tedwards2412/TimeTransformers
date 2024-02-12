@@ -85,11 +85,11 @@ def plot_loss():
 
 
 def plot_combined_losses():
-    parameter_count_list = [8762, 18418, 40418, 133218]
+    parameter_count_list = [20641, 48961, 55458, 141473]
     plt.figure(figsize=(8, 6))
 
     for i, parameter_count in enumerate(parameter_count_list):
-        file_name = f"results/transformer_{parameter_count}_training.json"
+        file_name = f"results/transformer_{parameter_count}_MSE_training.json"
 
         with open(file_name, "r") as file:
             model_dict = json.load(file)
@@ -113,7 +113,7 @@ def plot_combined_losses():
         # # Adjust the epochs to match the length of the rolled average array
         # # (since the first few values don't have a full window)
         # rolled_avg_epochs = model_dict["test_epochs"][window_size - 1 :]
-        plt.plot(
+        plt.semilogy(
             model_dict["test_epochs"],
             model_dict["test_losses"],
             # rolled_avg_epochs,
@@ -125,22 +125,22 @@ def plot_combined_losses():
 
     plt.legend()
     plt.xlabel("Epoch")
-    plt.ylim(-5, 5)
+    # plt.ylim(-5, 5)
     plt.ylabel("Loss")
-    plt.savefig("plots/loss.pdf", bbox_inches="tight")
+    plt.savefig("plots/loss_MSE_electricitytraffic.pdf", bbox_inches="tight")
 
 
 def parameter_test_scaling_plot():
     min_test_loss = []
-    parameter_count_list = [8762, 18418, 40418, 133218]
+    parameter_count_list = [20641, 48961, 55458, 141473]
 
     for parameter_count in parameter_count_list:
-        file_name = f"results/transformer_{parameter_count}_training.json"
+        file_name = f"results/transformer_{parameter_count}_MSE_training.json"
 
         with open(file_name, "r") as file:
             model_dict = json.load(file)
 
-        min_test_loss.append(min(model_dict["test_losses"]) + 10)
+        min_test_loss.append(abs(min(model_dict["test_losses"])))
 
     min_test_loss = np.array(min_test_loss)
     parameter_count_list = np.array(parameter_count_list)
@@ -152,7 +152,7 @@ def parameter_test_scaling_plot():
 
     # Curve fitting
     params, covariance = curve_fit(
-        power_law, parameter_count_list, min_test_loss, p0=[13, 0.0]
+        power_law, parameter_count_list, min_test_loss, p0=[5.0, -1.0]
     )
 
     # Extracting the parameters
@@ -168,23 +168,25 @@ def parameter_test_scaling_plot():
     plt.xscale("log")
     plt.yscale("log")
     plt.xlabel("Number of parameters")
-    plt.ylabel("Minimum Test Loss (+10 to make it positive)")
-    # plt.ylim(9e0, 1e1)
+    plt.ylabel("Minimum Test Loss")
+    plt.ylim(9e-2, 1.8e-1)
     plt.xlim(5e3, 1e6)
-    plt.savefig("plots/parameters_vs_loss.pdf", bbox_inches="tight")
+    plt.savefig(
+        "plots/parameters_vs_loss_MSE_electricitytraffic.pdf", bbox_inches="tight"
+    )
 
 
 def parameter_train_scaling_plot():
     min_test_loss = []
-    parameter_count_list = [8762, 18418, 40418, 133218]
+    parameter_count_list = [20641, 48961, 55458, 141473]
 
     for parameter_count in parameter_count_list:
-        file_name = f"results/transformer_{parameter_count}_training.json"
+        file_name = f"results/transformer_{parameter_count}_MSE_training.json"
 
         with open(file_name, "r") as file:
             model_dict = json.load(file)
 
-        min_test_loss.append(min(model_dict["train_losses"]) + 10)
+        min_test_loss.append(abs(min(model_dict["train_losses"])))
 
     min_test_loss = np.array(min_test_loss)
     parameter_count_list = np.array(parameter_count_list)
@@ -196,7 +198,7 @@ def parameter_train_scaling_plot():
 
     # Curve fitting
     params, covariance = curve_fit(
-        power_law, parameter_count_list, min_test_loss, p0=[13, 0.0]
+        power_law, parameter_count_list, min_test_loss, p0=[5.0, -1.0]
     )
 
     # Extracting the parameters
@@ -212,15 +214,17 @@ def parameter_train_scaling_plot():
     plt.xscale("log")
     plt.yscale("log")
     plt.xlabel("Number of parameters")
-    plt.ylabel("Minimum train Loss (+10 to make it positive)")
+    plt.ylabel("Minimum train Loss")
     # plt.ylim(9e0, 1e1)
     plt.xlim(5e3, 1e6)
-    plt.savefig("plots/parameters_vs_train_loss.pdf", bbox_inches="tight")
+    plt.savefig(
+        "plots/parameters_vs_train_loss_MSE_electricitytraffic.pdf", bbox_inches="tight"
+    )
 
 
 if __name__ == "__main__":
-    plot_loss_small_models()
-    # parameter_test_scaling_plot()
-    # parameter_train_scaling_plot()
+    # plot_loss_small_models()
+    parameter_test_scaling_plot()
+    parameter_train_scaling_plot()
     # plot_loss()
-    # plot_combined_losses()
+    plot_combined_losses()
