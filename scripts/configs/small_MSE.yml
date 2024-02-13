@@ -10,14 +10,14 @@ train:
 
 transformer:
   output_dim: 1
-  d_model: 16
+  d_model: 8
   num_heads: 1
-  num_layers: 2
-  d_ff: 16
+  num_layers: 1
+  d_ff: 8
   dropout: 0.1
   num_distribution_layers: 4
   patch_size: 16
-  loss_func: "MSE" # Should be Gaussian, Gaussian_fixed_var, or MSE
+  loss_func: "MSE" # Should be Gaussian or Gaussian_fixed_var
 
 datasets:
   - "electricity_hourly_dataset"

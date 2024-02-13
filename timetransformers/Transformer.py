@@ -190,6 +190,7 @@ class Decoder_Transformer(nn.Module):
         max_seq_length,
         dropout,
         num_distribution_layers,
+        patch_size,
         device=torch.device("cpu"),
     ):
         super(Decoder_Transformer, self).__init__()
@@ -198,6 +199,19 @@ class Decoder_Transformer(nn.Module):
         # self.positional_encoding = PositionalEncoding(d_model, max_seq_length).to(
         #     device
         # )
+        self.d_model = d_model
+        self.patch_layer = nn.Conv1d(
+            1, 1, kernel_size=patch_size, stride=patch_size
+        ).to(device)
+        self.patch_len = max_seq_length // patch_size
+        self.scale_factor = patch_size
+        # self.linear_expansion = nn.Linear(
+        #     self.d_model * self.patch_len, self.max_seq_length * self.d_model
+        # ).to(device)
+        self.inverse_patch = nn.ConvTranspose1d(
+            self.d_model, self.d_model, kernel_size=patch_size, stride=patch_size
+        ).to(device)
+
         self.embedding_layer = nn.Linear(1, d_model).to(device)
         self.positional_encoding = LearnedPositionalEncoding(
             d_model, max_seq_length
@@ -255,6 +269,51 @@ class Decoder_Transformer(nn.Module):
 
         return mask
 
+    def generate_mask_patch(self, src):
+        batch_size, _ = src.size(0), src.size(1)
+
+        assert self.patch_len == src.size(1), "Input needs to be the patch length"
+
+        # Original mask: zeros above the diagonal, ones on and below
+        mask = torch.tril(
+            torch.ones(self.patch_len, self.patch_len, dtype=torch.bool)
+        ).to(self.device)
+
+        # Expand the mask for the batch size. Shape: [batch_size, 1, seq_length, seq_length]
+        mask = mask.unsqueeze(0).expand(batch_size, -1, -1, -1)
+
+        return mask
+
+    def forward(self, src, custom_mask=None):
+        # src_mask = self.generate_mask(src, custom_mask=custom_mask)
+        ######### For patching
+        src = self.patch_layer(src.permute(0, 2, 1))
+        src = src.permute(0, 2, 1)
+        src_mask = self.generate_mask_patch(src)
+        #########
+
+        src = self.embedding_layer(src)
+        src = self.positional_encoding(src)
+        src = self.dropout(src)
+
+        for dec_layer in self.decoder_layers:
+            src = dec_layer(src, src_mask)
+
+        # Splitting the output into mean and variance
+        # distribution_outputs = torch.stack(
+        #     [head(src).squeeze(-1) for head in self.distribution_heads], dim=-1
+        # )
+        # return distribution_outputs
+
+        #### Projects dimensions back to original sequence length
+        src = src.permute(0, 2, 1)
+        src = self.inverse_patch(src)
+        src = src.permute(0, 2, 1)
+        ####
+
+        output = self.distribution_head(src)
+        return output
+
     def Gaussian_loss(
         self, transformer_pred, y_true, epsilon=torch.tensor(1e-6, dtype=torch.float32)
     ):
@@ -290,23 +349,6 @@ class Decoder_Transformer(nn.Module):
         loss = torch.mean((y_true - mean) ** 2)
 
         return loss
-
-    def forward(self, src, custom_mask=None):
-        src_mask = self.generate_mask(src, custom_mask=custom_mask)
-        src = self.embedding_layer(src)
-        src = self.positional_encoding(src)
-        src = self.dropout(src)
-
-        for dec_layer in self.decoder_layers:
-            src = dec_layer(src, src_mask)
-
-        # Splitting the output into mean and variance
-        # distribution_outputs = torch.stack(
-        #     [head(src).squeeze(-1) for head in self.distribution_heads], dim=-1
-        # )
-        # return distribution_outputs
-        output = self.distribution_head(src)
-        return output
 
     def generate(self, src, n_sequence):
         # Generate the next n_sequence elements
