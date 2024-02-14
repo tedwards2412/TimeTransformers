@@ -285,11 +285,11 @@ class Decoder_Transformer(nn.Module):
         return mask
 
     def forward(self, src, custom_mask=None):
-        # src_mask = self.generate_mask(src, custom_mask=custom_mask)
+        src_mask = self.generate_mask(src, custom_mask=custom_mask)
         ######### For patching
-        src = self.patch_layer(src.permute(0, 2, 1))
-        src = src.permute(0, 2, 1)
-        src_mask = self.generate_mask_patch(src)
+        # src = self.patch_layer(src.permute(0, 2, 1))
+        # src = src.permute(0, 2, 1)
+        # src_mask = self.generate_mask_patch(src)
         #########
 
         src = self.embedding_layer(src)
@@ -306,9 +306,9 @@ class Decoder_Transformer(nn.Module):
         # return distribution_outputs
 
         #### Projects dimensions back to original sequence length
-        src = src.permute(0, 2, 1)
-        src = self.inverse_patch(src)
-        src = src.permute(0, 2, 1)
+        # src = src.permute(0, 2, 1)
+        # src = self.inverse_patch(src)
+        # src = src.permute(0, 2, 1)
         ####
 
         output = self.distribution_head(src)
