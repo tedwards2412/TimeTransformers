@@ -136,6 +136,7 @@ def train(config):
     train_losses = []
     test_steps = []
     test_losses = []
+    MSE_test_losses = []
 
     min_loss = 1e10
     patience_counter = 0
@@ -159,8 +160,6 @@ def train(config):
 
             if loss_function == "Gaussian":
                 loss = transformer.Gaussian_loss(output, batched_data_true)
-            elif loss_function == "Gaussian_fixed_var":
-                loss = transformer.Gaussian_loss_fixed_var(output, batched_data_true)
             elif loss_function == "MSE":
                 loss = transformer.MSE(output, batched_data_true)
 
@@ -179,6 +178,7 @@ def train(config):
             if step_counter % evaluation_interval == 0:
                 transformer.eval()
                 total_test_loss = 0
+                total_MSE_test_loss = 0
                 total_test_samples = 0
 
                 with torch.no_grad():  # Disable gradient calculation
@@ -193,26 +193,28 @@ def train(config):
                             test_loss = transformer.Gaussian_loss(
                                 output, batched_data_true
                             )
-                        elif loss_function == "Gaussian_fixed_var":
-                            test_loss = transformer.Gaussian_loss_fixed_var(
-                                output, batched_data_true
-                            )
+                            test_loss_MSE = transformer.MSE(output, batched_data_true)
+
                         elif loss_function == "MSE":
                             test_loss = transformer.MSE(output, batched_data_true)
 
                         total_test_loss += test_loss.item() * current_batch_size
+                        total_MSE_test_loss += test_loss_MSE.item() * current_batch_size
                         total_test_samples += current_batch_size
 
                 average_test_loss = total_test_loss / total_test_samples
+                average_MSE_test_loss = total_MSE_test_loss / total_test_samples
                 if average_test_loss < min_loss:
                     min_loss = average_test_loss
                     patience_counter = 0
                 else:
                     patience_counter += 1
 
+                MSE_test_losses.append(average_MSE_test_loss)
                 test_losses.append(average_test_loss)
                 test_steps.append(step_counter)
                 wandb.log({"test_loss": average_test_loss, "step": step_counter})
+                wandb.log({"MSE_test_loss": MSE_test_losses, "step": step_counter})
 
                 if average_test_loss < min_loss:
                     torch.save(
@@ -235,6 +237,7 @@ def train(config):
         "train_losses": train_losses,
         "train_epochs": train_steps,
         "test_losses": test_losses,
+        "MSE_test_losses": MSE_test_losses,
         "test_epochs": test_steps,
         "model_file_name": f"{model_file_name}",
     }
