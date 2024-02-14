@@ -194,33 +194,40 @@ def train(config):
                                 output, batched_data_true
                             )
                             test_loss_MSE = transformer.MSE(output, batched_data_true)
+                            total_MSE_test_loss += (
+                                test_loss_MSE.item() * current_batch_size
+                            )
 
                         elif loss_function == "MSE":
                             test_loss = transformer.MSE(output, batched_data_true)
 
                         total_test_loss += test_loss.item() * current_batch_size
-                        total_MSE_test_loss += test_loss_MSE.item() * current_batch_size
                         total_test_samples += current_batch_size
 
                 average_test_loss = total_test_loss / total_test_samples
-                average_MSE_test_loss = total_MSE_test_loss / total_test_samples
-                if average_test_loss < min_loss:
-                    min_loss = average_test_loss
-                    patience_counter = 0
-                else:
-                    patience_counter += 1
+                if loss_function == "Gaussian":
+                    average_MSE_test_loss = total_MSE_test_loss / total_test_samples
+                    wandb.log(
+                        {"MSE_test_loss": average_MSE_test_loss, "step": step_counter}
+                    )
 
                 MSE_test_losses.append(average_MSE_test_loss)
                 test_losses.append(average_test_loss)
                 test_steps.append(step_counter)
                 wandb.log({"test_loss": average_test_loss, "step": step_counter})
-                wandb.log({"MSE_test_loss": MSE_test_losses, "step": step_counter})
 
                 if average_test_loss < min_loss:
                     torch.save(
                         transformer.state_dict(),
                         f"results/transformer_{num_params}_{loss_function}_best.pt",
                     )
+
+                # Early stopping
+                if average_test_loss < min_loss:
+                    min_loss = average_test_loss
+                    patience_counter = 0
+                else:
+                    patience_counter += 1
 
             step_counter += 1
 
@@ -233,14 +240,23 @@ def train(config):
     # Finally, lets save the losses
     file_name = f"results/transformer_{num_params}_{loss_function}_training.json"
     model_file_name = f"results/transformer_{num_params}_{loss_function}_final.pt"
-    train_info = {
-        "train_losses": train_losses,
-        "train_epochs": train_steps,
-        "test_losses": test_losses,
-        "MSE_test_losses": MSE_test_losses,
-        "test_epochs": test_steps,
-        "model_file_name": f"{model_file_name}",
-    }
+    if loss_function == "Gaussian":
+        train_info = {
+            "train_losses": train_losses,
+            "train_epochs": train_steps,
+            "test_losses": test_losses,
+            "MSE_test_losses": MSE_test_losses,
+            "test_epochs": test_steps,
+            "model_file_name": f"{model_file_name}",
+        }
+    else:
+        train_info = {
+            "train_losses": train_losses,
+            "train_epochs": train_steps,
+            "test_losses": test_losses,
+            "test_epochs": test_steps,
+            "model_file_name": f"{model_file_name}",
+        }
     print(f"Saving final model weights to {model_file_name}")
     torch.save(
         transformer.state_dict(),
