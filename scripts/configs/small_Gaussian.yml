@@ -1,6 +1,6 @@
 train:
   train_split: 0.95
-  max_seq_length: 1024
+  max_seq_length: 256
   batch_size: 512
   test_batch_size: 4096
   total_training_steps: 250000
@@ -18,7 +18,7 @@ transformer:
   num_distribution_layers: 4
   loss_func: "Gaussian" # Should be Gaussian or Gaussian_fixed_var
 
-  datasets:
+datasets:
   - "electricity_hourly_dataset"
   - "traffic_hourly_dataset"
   - "traffic_weekly_dataset"

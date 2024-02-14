@@ -190,7 +190,7 @@ class Decoder_Transformer(nn.Module):
         max_seq_length,
         dropout,
         num_distribution_layers,
-        patch_size,
+        # patch_size,
         device=torch.device("cpu"),
     ):
         super(Decoder_Transformer, self).__init__()
@@ -200,17 +200,17 @@ class Decoder_Transformer(nn.Module):
         #     device
         # )
         self.d_model = d_model
-        self.patch_layer = nn.Conv1d(
-            1, 1, kernel_size=patch_size, stride=patch_size
-        ).to(device)
-        self.patch_len = max_seq_length // patch_size
-        self.scale_factor = patch_size
+        # self.patch_layer = nn.Conv1d(
+        #     1, 1, kernel_size=patch_size, stride=patch_size
+        # ).to(device)
+        # self.patch_len = max_seq_length // patch_size
+        # self.scale_factor = patch_size
         # self.linear_expansion = nn.Linear(
         #     self.d_model * self.patch_len, self.max_seq_length * self.d_model
         # ).to(device)
-        self.inverse_patch = nn.ConvTranspose1d(
-            self.d_model, self.d_model, kernel_size=patch_size, stride=patch_size
-        ).to(device)
+        # self.inverse_patch = nn.ConvTranspose1d(
+        #     self.d_model, self.d_model, kernel_size=patch_size, stride=patch_size
+        # ).to(device)
 
         self.embedding_layer = nn.Linear(1, d_model).to(device)
         self.positional_encoding = LearnedPositionalEncoding(
@@ -300,10 +300,10 @@ class Decoder_Transformer(nn.Module):
             src = dec_layer(src, src_mask)
 
         # Splitting the output into mean and variance
-        # distribution_outputs = torch.stack(
-        #     [head(src).squeeze(-1) for head in self.distribution_heads], dim=-1
-        # )
-        # return distribution_outputs
+        distribution_outputs = torch.stack(
+            [head(src).squeeze(-1) for head in self.distribution_heads], dim=-1
+        )
+        return distribution_outputs
 
         #### Projects dimensions back to original sequence length
         # src = src.permute(0, 2, 1)
@@ -311,8 +311,8 @@ class Decoder_Transformer(nn.Module):
         # src = src.permute(0, 2, 1)
         ####
 
-        output = self.distribution_head(src)
-        return output
+        # output = self.distribution_head(src)
+        # return output
 
     def Gaussian_loss(
         self, transformer_pred, y_true, epsilon=torch.tensor(1e-6, dtype=torch.float32)

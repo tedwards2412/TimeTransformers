@@ -16,7 +16,7 @@ transformer:
   d_ff: 128
   dropout: 0.1
   num_distribution_layers: 4
-  patch_size: 16
+  # patch_size: 16
   loss_func: "Gaussian" # Should be Gaussian or Gaussian_fixed_var
 
 datasets:

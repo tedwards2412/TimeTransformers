@@ -45,7 +45,7 @@ def train(config):
     dropout = config["transformer"]["dropout"]
     num_distribution_layers = config["transformer"]["num_distribution_layers"]
     loss_function = config["transformer"]["loss_func"]
-    patch_size = config["transformer"]["patch_size"]
+    # patch_size = config["transformer"]["patch_size"]
 
     # Datasets
     datasets_to_load = config["datasets"]
@@ -101,7 +101,7 @@ def train(config):
         max_seq_length,
         dropout,
         num_distribution_layers,
-        patch_size,
+        # patch_size,
         device=device,
     ).to(device)
     num_params = sum(p.numel() for p in transformer.parameters() if p.requires_grad)
