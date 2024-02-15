@@ -1,8 +1,8 @@
 train:
-  train_split: 0.95
+  train_split: 0.98
   max_seq_length: 256
   batch_size: 512
-  test_batch_size: 4096
+  test_batch_size: 8192
   total_training_steps: 250000
   early_stopping: 250000
   warmup_steps: 3000
