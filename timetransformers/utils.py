@@ -4,6 +4,7 @@ from distutils.util import strtobool
 import torch
 import numpy as np
 from scipy.stats import norm
+from tqdm import tqdm
 from torch.optim.lr_scheduler import _LRScheduler
 
 import pandas as pd
@@ -206,6 +207,27 @@ def convert_df_to_numpy(dfs, train_split=0.8):
             train_masks.append(mask[: int(train_split * new_data_length)])
 
             test_data.append(new_data[int(train_split * new_data_length) :])
+            test_masks.append(mask[int(train_split * new_data_length) :])
+
+    return training_data, test_data, train_masks, test_masks
+
+
+def add_NOAA_dataset(training_data, test_data, train_masks, test_masks, train_split):
+    weather_data = np.load("../data/NOA_data/weather.npz")
+
+    for data_name in tqdm(weather_data.files):
+        data = weather_data[data_name]
+
+        for i in range(data.shape[0]):
+            current_ts = data[i]
+            new_data_length = current_ts.shape[0]
+            mask = np.ones(new_data_length)
+
+            # Need to append test and train masks
+            training_data.append(current_ts[: int(train_split * new_data_length)])
+            train_masks.append(mask[: int(train_split * new_data_length)])
+
+            test_data.append(current_ts[int(train_split * new_data_length) :])
             test_masks.append(mask[int(train_split * new_data_length) :])
 
     return training_data, test_data, train_masks, test_masks

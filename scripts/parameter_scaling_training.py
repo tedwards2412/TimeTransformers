@@ -18,7 +18,7 @@ cwd = os.getcwd()
 sys.path.insert(0, cwd + "/../timetransformers")
 
 from data_handling import TimeSeriesDataset, download_data
-from utils import convert_df_to_numpy, GradualWarmupScheduler
+from utils import convert_df_to_numpy, GradualWarmupScheduler, add_NOAA_dataset
 import Transformer
 
 
@@ -45,10 +45,10 @@ def train(config):
     dropout = config["transformer"]["dropout"]
     num_distribution_layers = config["transformer"]["num_distribution_layers"]
     loss_function = config["transformer"]["loss_func"]
-    # patch_size = config["transformer"]["patch_size"]
 
     # Datasets
-    datasets_to_load = config["datasets"]
+    monash_datasets_to_load = config["datasets"]["monash"]
+    NOAA_datasets_to_load = config["datasets"]["weather"]
 
     device = torch.device(
         "cuda"
@@ -65,7 +65,7 @@ def train(config):
 
     # First lets download the data and make a data loader
     print("Downloading data...")
-    dfs = download_data(datasets_to_load)
+    dfs = download_data(monash_datasets_to_load)
 
     (
         training_data_list,
@@ -73,6 +73,17 @@ def train(config):
         train_masks,
         test_masks,
     ) = convert_df_to_numpy(dfs, train_split)
+
+    if "NOAA_dataset" in NOAA_datasets_to_load:
+        print("Adding NOAA dataset...")
+        (
+            training_data_list,
+            test_data_list,
+            train_masks,
+            test_masks,
+        ) = add_NOAA_dataset(
+            training_data_list, test_data_list, train_masks, test_masks, train_split
+        )
 
     train_dataset = TimeSeriesDataset(training_data_list, max_seq_length, train_masks)
     train_dataloader = DataLoader(
@@ -89,6 +100,7 @@ def train(config):
 
     print("Total number of training tokens:", train_dataset.total_length())
     print("Total number of test tokens:", test_dataset.total_length())
+    quit()
 
     # Now lets make a transformer
 

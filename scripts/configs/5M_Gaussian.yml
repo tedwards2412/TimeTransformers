@@ -10,12 +10,12 @@ train:
 
 transformer:
   output_dim: 2
-  d_model: 32
+  d_model: 256
   num_heads: 1
-  num_layers: 1
-  d_ff: 32
+  num_layers: 12
+  d_ff: 256
   dropout: 0.1
-  num_distribution_layers: 4
+  num_distribution_layers: 6
   loss_func: "Gaussian" # Should be Gaussian or Gaussian_fixed_var
 
 datasets:

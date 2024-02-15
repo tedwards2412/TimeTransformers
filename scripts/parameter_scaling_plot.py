@@ -85,11 +85,11 @@ def plot_loss():
 
 
 def plot_combined_losses():
-    parameter_count_list = [20641, 48961, 55458, 141473]
+    parameter_count_list = [2762, 17954, 879490]
     plt.figure(figsize=(8, 6))
 
     for i, parameter_count in enumerate(parameter_count_list):
-        file_name = f"results/transformer_{parameter_count}_MSE_training.json"
+        file_name = f"results/transformer_{parameter_count}_Gaussian_training.json"
 
         with open(file_name, "r") as file:
             model_dict = json.load(file)
@@ -113,7 +113,8 @@ def plot_combined_losses():
         # # Adjust the epochs to match the length of the rolled average array
         # # (since the first few values don't have a full window)
         # rolled_avg_epochs = model_dict["test_epochs"][window_size - 1 :]
-        plt.semilogy(
+
+        plt.plot(
             model_dict["test_epochs"],
             model_dict["test_losses"],
             # rolled_avg_epochs,
@@ -127,20 +128,20 @@ def plot_combined_losses():
     plt.xlabel("Epoch")
     # plt.ylim(-5, 5)
     plt.ylabel("Loss")
-    plt.savefig("plots/loss_MSE_electricitytraffic.pdf", bbox_inches="tight")
+    plt.savefig("plots/loss_Gaussian.pdf", bbox_inches="tight")
 
 
 def parameter_test_scaling_plot():
     min_test_loss = []
-    parameter_count_list = [20641, 48961, 55458, 141473]
+    parameter_count_list = [2762, 17954, 879490]
 
     for parameter_count in parameter_count_list:
-        file_name = f"results/transformer_{parameter_count}_MSE_training.json"
+        file_name = f"results/transformer_{parameter_count}_Gaussian_training.json"
 
         with open(file_name, "r") as file:
             model_dict = json.load(file)
 
-        min_test_loss.append(abs(min(model_dict["test_losses"])))
+        min_test_loss.append(abs(min(model_dict["MSE_test_losses"])))
 
     min_test_loss = np.array(min_test_loss)
     parameter_count_list = np.array(parameter_count_list)
@@ -160,7 +161,7 @@ def parameter_test_scaling_plot():
     print("Normalization constant: ", a)
     print("Power law exponent: ", b)
 
-    N_arr = np.geomspace(5e3, 1e6)
+    N_arr = np.geomspace(1e3, 1e7)
 
     plt.figure(figsize=(8, 6))
     plt.scatter(parameter_count_list, min_test_loss, color=color_list[0])
@@ -169,11 +170,9 @@ def parameter_test_scaling_plot():
     plt.yscale("log")
     plt.xlabel("Number of parameters")
     plt.ylabel("Minimum Test Loss")
-    plt.ylim(9e-2, 1.8e-1)
-    plt.xlim(5e3, 1e6)
-    plt.savefig(
-        "plots/parameters_vs_loss_MSE_electricitytraffic.pdf", bbox_inches="tight"
-    )
+    # plt.ylim(9e-2, 1.8e-1)
+    # plt.xlim(5e3, 1e7)
+    plt.savefig("plots/parameters_vs_loss_Gaussian.pdf", bbox_inches="tight")
 
 
 def parameter_train_scaling_plot():
@@ -206,7 +205,7 @@ def parameter_train_scaling_plot():
     print("Normalization constant: ", a)
     print("Power law exponent: ", b)
 
-    N_arr = np.geomspace(5e3, 1e6)
+    N_arr = np.geomspace(1e3, 1e7)
 
     plt.figure(figsize=(8, 6))
     plt.scatter(parameter_count_list, min_test_loss, color=color_list[0])
@@ -216,7 +215,7 @@ def parameter_train_scaling_plot():
     plt.xlabel("Number of parameters")
     plt.ylabel("Minimum train Loss")
     # plt.ylim(9e0, 1e1)
-    plt.xlim(5e3, 1e6)
+    plt.xlim(1e3, 1e7)
     plt.savefig(
         "plots/parameters_vs_train_loss_MSE_electricitytraffic.pdf", bbox_inches="tight"
     )
@@ -225,6 +224,6 @@ def parameter_train_scaling_plot():
 if __name__ == "__main__":
     # plot_loss_small_models()
     parameter_test_scaling_plot()
-    parameter_train_scaling_plot()
+    # parameter_train_scaling_plot()
     # plot_loss()
     plot_combined_losses()
