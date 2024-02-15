@@ -100,7 +100,6 @@ def train(config):
 
     print("Total number of training tokens:", train_dataset.total_length())
     print("Total number of test tokens:", test_dataset.total_length())
-    quit()
 
     # Now lets make a transformer
 
