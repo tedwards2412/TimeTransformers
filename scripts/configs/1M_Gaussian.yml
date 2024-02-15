@@ -2,12 +2,12 @@ train:
   train_split: 0.98
   max_seq_length: 256
   batch_size: 512
-  test_batch_size: 8192
+  test_batch_size: 16384
   total_training_steps: 250000
   early_stopping: 250000
   warmup_steps: 3000
   evaluation_interval: 500
-  
+
 transformer:
   output_dim: 2
   d_model: 128
