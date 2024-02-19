@@ -8,6 +8,7 @@ import yaml
 import argparse
 import json
 import numpy as np
+import time
 import wandb
 
 # This is just until temporary implementation
@@ -35,6 +36,7 @@ def train(config):
     early_stopping = config["train"]["early_stopping"]
     warmup_steps = config["train"]["warmup_steps"]
     evaluation_interval = config["train"]["evaluation_interval"]
+    test_size = config["train"]["test_size"]
 
     # Transformer parameters
     output_dim = config["transformer"]["output_dim"]
@@ -53,7 +55,8 @@ def train(config):
     device = torch.device(
         "cuda"
         if torch.cuda.is_available()
-        else "mps" if torch.backends.mps.is_available() else "cpu"
+        # else "mps" if torch.backends.mps.is_available() else "cpu"
+        else "cpu"
     )
     print(f"Using {device}")
     if device.type == "cuda":
@@ -90,9 +93,18 @@ def train(config):
         train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers
     )
 
-    test_dataset = TimeSeriesDataset(test_data_list, max_seq_length, test_masks)
+    test_dataset = TimeSeriesDataset(
+        test_data_list,
+        max_seq_length,
+        test_masks,
+        test=True,
+        test_size=test_size,
+    )
     test_dataloader = DataLoader(
-        test_dataset, batch_size=test_batch_size, shuffle=True, num_workers=num_workers
+        test_dataset,
+        batch_size=test_batch_size,
+        shuffle=True,
+        num_workers=num_workers,
     )
 
     print("Training dataset size: ", train_dataset.__len__())
@@ -100,6 +112,9 @@ def train(config):
 
     print("Total number of training tokens:", train_dataset.total_length())
     print("Total number of test tokens:", test_dataset.total_length())
+
+    print("Train batches: ", len(train_dataloader))
+    print("Test batches: ", len(test_dataloader))
 
     # Now lets make a transformer
 
@@ -171,6 +186,8 @@ def train(config):
 
             if loss_function == "Gaussian":
                 loss = transformer.Gaussian_loss(output, batched_data_true)
+            elif loss_function == "studentT":
+                loss = transformer.studentT_loss(output, batched_data_true)
             elif loss_function == "MSE":
                 loss = transformer.MSE(output, batched_data_true)
 
@@ -209,6 +226,15 @@ def train(config):
                                 test_loss_MSE.item() * current_batch_size
                             )
 
+                        if loss_function == "studentT":
+                            test_loss = transformer.studentT_loss(
+                                output, batched_data_true
+                            )
+                            test_loss_MSE = transformer.MSE(output, batched_data_true)
+                            total_MSE_test_loss += (
+                                test_loss_MSE.item() * current_batch_size
+                            )
+
                         elif loss_function == "MSE":
                             test_loss = transformer.MSE(output, batched_data_true)
 
@@ -216,7 +242,7 @@ def train(config):
                         total_test_samples += current_batch_size
 
                 average_test_loss = total_test_loss / total_test_samples
-                if loss_function == "Gaussian":
+                if loss_function == "Gaussian" or loss_function == "studentT":
                     average_MSE_test_loss = total_MSE_test_loss / total_test_samples
                     wandb.log(
                         {"MSE_test_loss": average_MSE_test_loss, "step": step_counter}
@@ -251,7 +277,7 @@ def train(config):
     # Finally, lets save the losses
     file_name = f"results/transformer_{num_params}_{loss_function}_training.json"
     model_file_name = f"results/transformer_{num_params}_{loss_function}_final.pt"
-    if loss_function == "Gaussian":
+    if loss_function == "Gaussian" or loss_function == "studentT":
         train_info = {
             "train_losses": train_losses,
             "train_epochs": train_steps,

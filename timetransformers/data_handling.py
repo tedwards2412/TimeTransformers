@@ -17,14 +17,16 @@ from utils import convert_tsf_to_dataframe
 
 
 def normalize_data(data, mean, std):
-    if mean == 0 or std == 0:
-        return data
+    if std == 0:
+        return data - mean
     else:
         return (data - mean) / std
 
 
 class TimeSeriesDataset(Dataset):
-    def __init__(self, data, max_sequence_length, miss_vals_mask):
+    def __init__(
+        self, data, max_sequence_length, miss_vals_mask, test=False, test_size=0.2
+    ):
         self.max_sequence_length = max_sequence_length
         self.means = np.array([np.mean(data[i]) for i in range(len(data))])
         self.std = np.array([np.std(data[i]) for i in range(len(data))])
@@ -38,17 +40,22 @@ class TimeSeriesDataset(Dataset):
             np.array([len(self.data[i]) for i in range(len(self.data))])
             / self.total_length()
         )
-
-        self.data_len = self.calc_len()
+        self.test = test
+        self.test_size = test_size
+        self.data_len = self.calc_len(self.test, self.test_size)
 
     def __len__(self):
         return self.data_len
 
-    def calc_len(self):
+    def calc_len(self, test, test_size):
         l = 0
         for i in range(len(self.data)):
             l += len(self.data[i])
-        return int(l / self.max_sequence_length)
+        length = int(l / self.max_sequence_length)
+        if test:
+            return int(length * test_size)
+        else:
+            return length
 
     def total_length(self):
         l = 0

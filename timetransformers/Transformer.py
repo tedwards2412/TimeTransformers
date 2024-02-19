@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import math
 import torch.utils.checkpoint
+import torch.nn.functional as F
 
 
 class MultiHeadAttention(nn.Module):
@@ -320,10 +321,31 @@ class Decoder_Transformer(nn.Module):
         epsilon = epsilon.to(self.device)
         # Splitting the output into mean and variance
         mean = transformer_pred[:, :, 0]
-        var = torch.nn.functional.softplus(transformer_pred[:, :, 1]) + epsilon
+        var = F.softplus(transformer_pred[:, :, 1]) + epsilon
 
         # Calculating the Gaussian negative log-likelihood loss
         loss = torch.mean((y_true - mean) ** 2 / var + torch.log(var))
+
+        return loss
+
+    def studentT_loss(
+        self, transformer_pred, y_true, epsilon=torch.tensor(1e-6, dtype=torch.float32)
+    ):
+        epsilon = epsilon.to(self.device)
+
+        # Splitting the output into mean, scale, and degrees of freedom
+        mean = transformer_pred[:, :, 0]
+        scale = F.softplus(transformer_pred[:, :, 1]) + epsilon
+        dof = F.softplus(transformer_pred[:, :, 2]) + 2 + epsilon
+
+        # Calculating the Student-t negative log-likelihood loss
+        part1 = torch.lgamma((dof + 1) / 2) - torch.lgamma(dof / 2)
+        part2 = torch.log(torch.sqrt(dof * torch.pi) * scale)
+        part3 = ((dof + 1) / 2) * torch.log(
+            1 + (1 / dof) * ((y_true - mean) / scale) ** 2
+        )
+
+        loss = torch.mean(-part1 + part2 + part3)
 
         return loss
 
@@ -365,7 +387,7 @@ class Decoder_Transformer(nn.Module):
             next_output = torch.normal(
                 mean=output[:, -1, 0].unsqueeze(1),
                 std=torch.sqrt(
-                    torch.nn.functional.softplus(output[:, -1, 1]).unsqueeze(1) + 1e-6,
+                    F.softplus(output[:, -1, 1]).unsqueeze(1) + 1e-6,
                 ),
             )
 

@@ -2,22 +2,22 @@ train:
   train_split: 0.95
   max_seq_length: 256
   batch_size: 512
-  test_batch_size: 16384
+  test_batch_size: 8192
   total_training_steps: 250000
   early_stopping: 250000
   warmup_steps: 3000
   evaluation_interval: 1000
-  test_size: 0.2
-  
+  test_size: 0.1
+
 transformer:
-  output_dim: 2
-  d_model: 256
+  output_dim: 3
+  d_model: 128
   num_heads: 1
-  num_layers: 12
-  d_ff: 256
+  num_layers: 8
+  d_ff: 128
   dropout: 0.1
   num_distribution_layers: 4
-  loss_func: "Gaussian" # Should be Gaussian or Gaussian_fixed_var
+  loss_func: "studentT" # Should be Gaussian, MSE, or studentT
 
 datasets:
   monash:
