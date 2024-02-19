@@ -172,8 +172,8 @@ def train(config):
     pbar = tqdm(total=total_training_steps, desc="Training", position=0)
 
     while step_counter < total_training_steps:
-        transformer.train()
         for batch in train_dataloader:
+            transformer.train()
             if step_counter >= total_training_steps:
                 break
 
