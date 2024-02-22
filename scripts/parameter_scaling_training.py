@@ -18,8 +18,8 @@ import sys
 cwd = os.getcwd()
 sys.path.insert(0, cwd + "/../timetransformers")
 
-from data_handling import TimeSeriesDataset, download_data
-from utils import convert_df_to_numpy, GradualWarmupScheduler, add_NOAA_dataset
+from data_handling import TimeSeriesDataset, load_datasets
+from utils import GradualWarmupScheduler
 import Transformer
 
 
@@ -49,8 +49,7 @@ def train(config):
     loss_function = config["transformer"]["loss_func"]
 
     # Datasets
-    monash_datasets_to_load = config["datasets"]["monash"]
-    NOAA_datasets_to_load = config["datasets"]["weather"]
+    datasets_to_load = config["datasets"]
 
     device = torch.device(
         "cuda"
@@ -67,26 +66,34 @@ def train(config):
     print("Number of workers: ", num_workers)
 
     # First lets download the data and make a data loader
-    print("Downloading data...")
-    dfs = download_data(monash_datasets_to_load)
-
+    print("Loading data...")
     (
         training_data_list,
         test_data_list,
         train_masks,
         test_masks,
-    ) = convert_df_to_numpy(dfs, train_split)
+    ) = load_datasets(datasets_to_load, train_split)
+    # print(len(training_data_list))
+    # quit()
+    # dfs = download_data(monash_datasets_to_load)
 
-    if "NOAA_dataset" in NOAA_datasets_to_load:
-        print("Adding NOAA dataset...")
-        (
-            training_data_list,
-            test_data_list,
-            train_masks,
-            test_masks,
-        ) = add_NOAA_dataset(
-            training_data_list, test_data_list, train_masks, test_masks, train_split
-        )
+    # (
+    #     training_data_list,
+    #     test_data_list,
+    #     train_masks,
+    #     test_masks,
+    # ) = convert_df_to_numpy(dfs, train_split)
+
+    # if "NOAA_dataset" in NOAA_datasets_to_load:
+    #     print("Adding NOAA dataset...")
+    #     (
+    #         training_data_list,
+    #         test_data_list,
+    #         train_masks,
+    #         test_masks,
+    #     ) = add_NOAA_dataset(
+    #         training_data_list, test_data_list, train_masks, test_masks, train_split
+    #     )
 
     train_dataset = TimeSeriesDataset(training_data_list, max_seq_length, train_masks)
     train_dataloader = DataLoader(
