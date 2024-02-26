@@ -1,14 +1,3 @@
-train:
-  train_split: 0.95
-  max_seq_length: 256
-  batch_size: 512
-  test_batch_size: 8192
-  total_training_steps: 250000
-  early_stopping: 250000
-  warmup_steps: 3000
-  evaluation_interval: 1000
-  test_size: 0.1
-
 transformer:
   output_dim: 3
   d_model: 16
@@ -18,6 +7,17 @@ transformer:
   dropout: 0.1
   num_distribution_layers: 4
   loss_func: "studentT" # Should be Gaussian, MSE, or studentT
+
+train:
+  train_split: 0.95
+  max_seq_length: 256
+  batch_size: 512
+  test_batch_size: 16384
+  total_training_steps: 100000
+  early_stopping: 250000
+  warmup_steps: 3000
+  evaluation_interval: 1000
+  test_size: 0.1
 
 datasets:
   monash:
@@ -43,3 +43,8 @@ datasets:
     - "sunspot_dataset_without_missing_values"
   weather:
     - "NOAA_dataset"
+    - "ERA5_dataset"
+  finance:
+    - "yahoo"
+  science:
+    - "ZTF"

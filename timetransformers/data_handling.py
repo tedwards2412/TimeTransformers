@@ -345,6 +345,17 @@ def load_datasets(datasets, train_split):
             ) = add_yahoo_dataset(
                 training_data_list, test_data_list, train_masks, test_masks, train_split
             )
+    if datasets["science"]:
+        print("Adding science data...")
+        if "ZTF" in datasets["science"]:
+            (
+                training_data_list,
+                test_data_list,
+                train_masks,
+                test_masks,
+            ) = add_ZTF_dataset(
+                training_data_list, test_data_list, train_masks, test_masks, train_split
+            )
     return training_data_list, test_data_list, train_masks, test_masks
 
 
@@ -415,16 +426,12 @@ def add_weather_dataset(
 
 
 def add_yahoo_dataset(training_data, test_data, train_masks, test_masks, train_split):
-    stock_returns = np.load(
-        "../data/finance/yahoo/cleaned_stock_returns.npz", allow_pickle=True
-    )
-    stock_volume = np.load(
-        "../data/finance/yahoo/cleaned_stock_volume.npz", allow_pickle=True
-    )
+    stock_returns = np.load(finance_paths["yahoo_returns"], allow_pickle=True)
+    stock_volume = np.load(finance_paths["yahoo_volume"], allow_pickle=True)
 
     print("Adding stock returns...")
     returns = stock_returns["cleaned_stock_returns"]
-    for i in tqdm(range(stock_returns["cleaned_stock_returns"].shape[0])):
+    for i in tqdm(range(returns.shape[0])):
         current_ts = returns[i]
         new_data_length = current_ts.shape[0]
         mask = np.ones(new_data_length)
@@ -438,7 +445,7 @@ def add_yahoo_dataset(training_data, test_data, train_masks, test_masks, train_s
 
     print("Adding stock volume...")
     volume = stock_volume["cleaned_stock_volume"]
-    for i in tqdm(range(stock_volume["cleaned_stock_volume"].shape[0])):
+    for i in tqdm(range(volume.shape[0])):
         current_ts = np.log10(1 + volume[i])
         new_data_length = current_ts.shape[0]
         mask = np.ones(new_data_length)
@@ -452,6 +459,33 @@ def add_yahoo_dataset(training_data, test_data, train_masks, test_masks, train_s
 
     return training_data, test_data, train_masks, test_masks
 
+
+def add_ZTF_dataset(training_data, test_data, train_masks, test_masks, train_split):
+    light_curve_data = np.load(science_paths["ZTF"])
+
+    print("Adding ZTF light curves returns...")
+    light_curves = light_curve_data["light_curves"]
+    for i in tqdm(range(light_curves.shape[0])):
+        ts_length = light_curves[i, -1]
+        current_ts = light_curves[i, :ts_length]
+        new_data_length = current_ts.shape[0]
+        mask = np.ones(new_data_length)
+
+        # Need to append test and train masks
+        training_data.append(current_ts[: int(train_split * new_data_length)])
+        train_masks.append(mask[: int(train_split * new_data_length)])
+
+        test_data.append(current_ts[int(train_split * new_data_length) :])
+        test_masks.append(mask[int(train_split * new_data_length) :])
+    return training_data, test_data, train_masks, test_masks
+
+
+science_paths = {"ZTF": "../data/science/ZTF_supernova/light_curves.npz"}
+
+finance_paths = {
+    "yahoo_returns": "../data/finance/yahoo/cleaned_stock_returns.npz",
+    "yahoo_volume": "../data/finance/yahoo/cleaned_stock_volume.npz",
+}
 
 weather_paths = {
     "NOAA_dataset": "../data/weather/NOAA/NOAA_weather.npz",
