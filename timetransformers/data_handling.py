@@ -466,7 +466,7 @@ def add_ZTF_dataset(training_data, test_data, train_masks, test_masks, train_spl
     print("Adding ZTF light curves returns...")
     light_curves = light_curve_data["light_curves"]
     for i in tqdm(range(light_curves.shape[0])):
-        ts_length = light_curves[i, -1]
+        ts_length = int(light_curves[i, -1])
         current_ts = light_curves[i, :ts_length]
         new_data_length = current_ts.shape[0]
         mask = np.ones(new_data_length)
