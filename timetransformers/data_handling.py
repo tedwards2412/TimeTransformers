@@ -527,14 +527,15 @@ def add_command_audio_dataset(
     print("Adding speech command audio...")
     speech_commands = speech_commands["audio_array"].astype(np.float32)
     for i in tqdm(range(speech_commands.shape[0])):
-        new_data_length = speech_commands.shape[0]
+        current_ts = speech_commands[i]
+        new_data_length = current_ts.shape[0]
         mask = np.ones(new_data_length)
 
         # Need to append test and train masks
-        training_data.append(speech_commands[i, : int(train_split * new_data_length)])
+        training_data.append(current_ts[: int(train_split * new_data_length)])
         train_masks.append(mask[: int(train_split * new_data_length)])
 
-        test_data.append(speech_commands[i, int(train_split * new_data_length) :])
+        test_data.append(current_ts[int(train_split * new_data_length) :])
         test_masks.append(mask[int(train_split * new_data_length) :])
     return training_data, test_data, train_masks, test_masks
 
