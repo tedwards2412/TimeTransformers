@@ -153,7 +153,7 @@ def train(config):
     wandb.init(
         project="timetransformers",
         entity="timetransformers",
-        name=f"transformer_{num_params}_{loss_function}_{train_dataset.total_length()}",
+        name=f"transformer_{num_params}_{loss_function}_{train_dataset.total_length()}_datascaling",
         config=config,
     )
 
