@@ -22,18 +22,28 @@ class TimeSeriesDataset(Dataset):
         self, data, max_sequence_length, miss_vals_mask, test=False, test_size=0.2
     ):
         self.max_sequence_length = max_sequence_length
-        self.means = np.array([np.mean(data[i]) for i in range(len(data))])
-        self.std = np.array([np.std(data[i]) for i in range(len(data))])
+        # self.means = np.array([np.mean(data[i]) for i in range(len(data))])
+        # self.std = np.array([np.std(data[i]) for i in range(len(data))])
+        self.means = np.array([np.mean(data[i]) for i in tqdm(range(len(data)), desc='Calculating means')])
+        self.std = np.array([np.std(data[i]) for i in tqdm(range(len(data)), desc='Calculating std')])
         self.miss_vals_mask = miss_vals_mask
 
+        # self.data = [
+        #     normalize_data(data[i], self.means[i], self.std[i])
+        #     for i in range(len(data))
+        # ]
+        # self.probs = (
+        #     np.array([len(self.data[i]) for i in range(len(self.data))])
+        #     / self.total_length()
+        # )
         self.data = [
             normalize_data(data[i], self.means[i], self.std[i])
-            for i in range(len(data))
+            for i in tqdm(range(len(data)), desc='Normalizing Data')
         ]
-        self.probs = (
-            np.array([len(self.data[i]) for i in range(len(self.data))])
-            / self.total_length()
-        )
+        self.probs = np.array([
+            len(self.data[i]) for i in tqdm(range(len(self.data)), desc='Calculating Probs')
+        ]) / self.total_length()
+
         self.test = test
         self.test_size = test_size
         self.data_len = self.calc_len(self.test, self.test_size)
@@ -356,6 +366,35 @@ def load_datasets(datasets, train_split):
             ) = add_ZTF_dataset(
                 training_data_list, test_data_list, train_masks, test_masks, train_split
             )
+    if datasets["audio"]:
+        print("Adding audio data...")
+        if "arabic" in datasets["audio"]:
+            (
+                training_data_list,
+                test_data_list,
+                train_masks,
+                test_masks,
+            ) = add_arabic_audio_dataset(
+                training_data_list, test_data_list, train_masks, test_masks, train_split
+            )
+        if "commands" in datasets["audio"]:
+            (
+                training_data_list,
+                test_data_list,
+                train_masks,
+                test_masks,
+            ) = add_command_audio_dataset(
+                training_data_list, test_data_list, train_masks, test_masks, train_split
+            )
+        if "birds" in datasets["audio"]:
+            (
+                training_data_list,
+                test_data_list,
+                train_masks,
+                test_masks,
+            ) = add_bird_audio_dataset(
+                training_data_list, test_data_list, train_masks, test_masks, train_split
+            )
     return training_data_list, test_data_list, train_masks, test_masks
 
 
@@ -479,6 +518,71 @@ def add_ZTF_dataset(training_data, test_data, train_masks, test_masks, train_spl
         test_masks.append(mask[int(train_split * new_data_length) :])
     return training_data, test_data, train_masks, test_masks
 
+
+def add_command_audio_dataset(
+    training_data, test_data, train_masks, test_masks, train_split
+):
+    speech_commands = np.load(audio_paths["commands"])
+
+    print("Adding speech command audio...")
+    speech_commands = speech_commands["audio_array"].astype(np.float32)
+    for i in tqdm(range(speech_commands.shape[0])):
+        new_data_length = speech_commands.shape[0]
+        mask = np.ones(new_data_length)
+
+        # Need to append test and train masks
+        training_data.append(speech_commands[i, : int(train_split * new_data_length)])
+        train_masks.append(mask[: int(train_split * new_data_length)])
+
+        test_data.append(speech_commands[i, int(train_split * new_data_length) :])
+        test_masks.append(mask[int(train_split * new_data_length) :])
+    return training_data, test_data, train_masks, test_masks
+
+def add_arabic_audio_dataset(
+    training_data, test_data, train_masks, test_masks, train_split
+):
+    arabic_audio = np.load(audio_paths["arabic"])
+
+    print("Adding arabic audio...")
+    arabic_audio = arabic_audio["downsampled_audio_padded"].astype(np.float32)
+    for i in tqdm(range(arabic_audio.shape[0])):
+        ts_length = int(arabic_audio[i, -1])
+        current_ts = arabic_audio[i, :ts_length]
+        new_data_length = current_ts.shape[0]
+        mask = np.ones(new_data_length)
+
+        # Need to append test and train masks
+        training_data.append(current_ts[: int(train_split * new_data_length)])
+        train_masks.append(mask[: int(train_split * new_data_length)])
+
+        test_data.append(current_ts[int(train_split * new_data_length) :])
+        test_masks.append(mask[int(train_split * new_data_length) :])
+    return training_data, test_data, train_masks, test_masks
+
+def add_bird_audio_dataset(
+    training_data, test_data, train_masks, test_masks, train_split
+):
+    bird_audio = np.load(audio_paths["birds"])
+
+    print("Adding bird audio...")
+    bird_audio = bird_audio["downsampled_audio_padded"].astype(np.float32)
+    for i in tqdm(range(bird_audio.shape[0])):
+        ts_length = int(bird_audio[i, -1])
+        current_ts = bird_audio[i, :ts_length]
+        new_data_length = current_ts.shape[0]
+        mask = np.ones(new_data_length)
+
+        # Need to append test and train masks
+        training_data.append(current_ts[: int(train_split * new_data_length)])
+        train_masks.append(mask[: int(train_split * new_data_length)])
+
+        test_data.append(current_ts[int(train_split * new_data_length) :])
+        test_masks.append(mask[int(train_split * new_data_length) :])
+    return training_data, test_data, train_masks, test_masks
+
+audio_paths = {"arabic": "../data/audio/arabic_speech_corpus/arabic_speech.npz",
+               "commands": "../data/audio/speech_commands/speech_commands.npz",
+               "birds": "../data/audio/bird_data/bird_audio.npz" }
 
 science_paths = {"ZTF": "../data/science/ZTF_supernova/light_curves.npz"}
 

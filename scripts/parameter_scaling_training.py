@@ -73,27 +73,6 @@ def train(config):
         train_masks,
         test_masks,
     ) = load_datasets(datasets_to_load, train_split)
-    # print(len(training_data_list))
-    # quit()
-    # dfs = download_data(monash_datasets_to_load)
-
-    # (
-    #     training_data_list,
-    #     test_data_list,
-    #     train_masks,
-    #     test_masks,
-    # ) = convert_df_to_numpy(dfs, train_split)
-
-    # if "NOAA_dataset" in NOAA_datasets_to_load:
-    #     print("Adding NOAA dataset...")
-    #     (
-    #         training_data_list,
-    #         test_data_list,
-    #         train_masks,
-    #         test_masks,
-    #     ) = add_NOAA_dataset(
-    #         training_data_list, test_data_list, train_masks, test_masks, train_split
-    #     )
 
     train_dataset = TimeSeriesDataset(training_data_list, max_seq_length, train_masks)
     train_dataloader = DataLoader(
@@ -122,6 +101,7 @@ def train(config):
 
     print("Train batches: ", len(train_dataloader))
     print("Test batches: ", len(test_dataloader))
+    quit()
 
     # Now lets make a transformer
 
