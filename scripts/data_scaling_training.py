@@ -255,7 +255,7 @@ def train(config):
                 if average_test_loss < min_loss:
                     torch.save(
                         transformer.state_dict(),
-                        f"results/transformer_{num_params}_{loss_function}_best_datascaling.pt",
+                        f"results/transformer_{num_params}_{loss_function}_{train_dataset.total_length()}_best_datascaling.pt",
                     )
 
                 # Early stopping
@@ -274,8 +274,8 @@ def train(config):
     pbar.close()
 
     # Finally, lets save the losses
-    file_name = f"results/transformer_{num_params}_{loss_function}_training_datascaling.json"
-    model_file_name = f"results/transformer_{num_params}_{loss_function}_final_datascaling.pt"
+    file_name = f"results/transformer_{num_params}_{loss_function}_{train_dataset.total_length()}_training_datascaling.json"
+    model_file_name = f"results/transformer_{num_params}_{loss_function}_{train_dataset.total_length()}_final_datascaling.pt"
     if loss_function == "Gaussian" or loss_function == "studentT":
         train_info = {
             "train_losses": train_losses,
