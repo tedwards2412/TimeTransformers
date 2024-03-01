@@ -101,7 +101,6 @@ def train(config):
 
     print("Train batches: ", len(train_dataloader))
     print("Test batches: ", len(test_dataloader))
-    quit()
 
     # Now lets make a transformer
 
