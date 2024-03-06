@@ -1,0 +1,54 @@
+transformer:
+  output_dim: 3
+  d_model: 256
+  num_heads: 1
+  num_layers: 8
+  d_ff: 256
+  dropout: 0.1
+  num_distribution_layers: 4
+  loss_func: "studentT" # Should be Gaussian, MSE, or studentT
+
+train:
+  train_split: 0.95
+  max_seq_length: 256
+  batch_size: 512
+  test_batch_size: 16384
+  total_training_steps: 100000
+  early_stopping: 250000
+  warmup_steps: 3000
+  evaluation_interval: 1000
+  test_size: 0.1
+
+datasets:
+  monash:
+    - "electricity_hourly_dataset"
+    - "traffic_hourly_dataset"
+    - "traffic_weekly_dataset"
+    - "solar_4_seconds_dataset"
+    - "solar_weekly_dataset"
+    - "solar_10_minutes_dataset"
+    - "wind_4_seconds_dataset"
+    - "oikolab_weather_dataset"
+    - "nn5_weekly_dataset"
+    - "nn5_daily_dataset_without_missing_values"
+    - "cif_2016_dataset"
+    - "fred_md_dataset"
+    - "hospital_dataset"
+    - "m4_hourly_dataset"
+    - "electricity_weekly_dataset"
+    - "australian_electricity_demand_dataset"
+    - "tourism_monthly_dataset"
+    - "tourism_quarterly_dataset"
+    - "elecdemand_dataset"
+    - "sunspot_dataset_without_missing_values"
+  weather:
+    - "NOAA_dataset"
+    - "ERA5_dataset"
+  finance:
+    - "yahoo"
+  science:
+    - "ZTF"
+  audio:
+    - "arabic"
+    - "commands"
+    - "birds"
