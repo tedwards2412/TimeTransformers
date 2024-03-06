@@ -10,6 +10,9 @@ import pandas as pd
 import os
 
 
+data_path = "../../TIME_opensource/final"
+print("Data path: ", data_path)
+
 def normalize_data(data, mean, std):
     if std == 0:
         return data - mean
@@ -130,8 +133,8 @@ class TimeSeriesDataset(Dataset):
 
 def download_single_datafile(dataset_name, dataset_id):
     # Define the path for the zip file
-    tsf_file_path = f"../data/monash/{dataset_name}.tsf"
-    zip_file_path = f"../data/monash/{dataset_name}.zip"
+    tsf_file_path = data_path + f"/monash/{dataset_name}.tsf"
+    zip_file_path = data_path + f"/monash/{dataset_name}.zip"
 
     # Check if the dataset already exists
     if not os.path.exists(tsf_file_path):
@@ -141,7 +144,7 @@ def download_single_datafile(dataset_name, dataset_id):
         print(f"Downloaded {dataset_name}.zip")
 
         # Unzip the dataset
-        os.system(f"unzip -o {zip_file_path} -d ../data/")
+        os.system(f"unzip -o {zip_file_path} -d {data_path}/monash")
         print(f"Unzipped {dataset_name}.zip")
 
         # Remove the zip file
@@ -151,7 +154,7 @@ def download_single_datafile(dataset_name, dataset_id):
         print(f"{dataset_name}.tsf already exists. Skipping download.")
 
     # Convert the tsf file to a pandas dataframe
-    return convert_tsf_to_dataframe(f"../data/monash/{dataset_name}.tsf")[0]
+    return convert_tsf_to_dataframe(data_path + f"/monash/{dataset_name}.tsf")[0]
 
 
 def download_data(dataset_names):
@@ -581,20 +584,20 @@ def add_bird_audio_dataset(
         test_masks.append(mask[int(train_split * new_data_length) :])
     return training_data, test_data, train_masks, test_masks
 
-audio_paths = {"arabic": "../data/audio/arabic_speech_corpus/arabic_speech.npz",
-               "commands": "../data/audio/speech_commands/speech_commands.npz",
-               "birds": "../data/audio/bird_data/bird_audio.npz" }
+audio_paths = {"arabic": data_path + "/audio/arabic_speech_corpus/arabic_speech.npz",
+               "commands": data_path + "/audio/speech_commands/speech_commands.npz",
+               "birds": data_path + "/audio/bird_data/bird_audio.npz" }
 
-science_paths = {"ZTF": "../data/science/ZTF_supernova/light_curves.npz"}
+science_paths = {"ZTF": data_path + "/science/ZTF_supernova/light_curves.npz"}
 
 finance_paths = {
-    "yahoo_returns": "../data/finance/yahoo/cleaned_stock_returns.npz",
-    "yahoo_volume": "../data/finance/yahoo/cleaned_stock_volume.npz",
+    "yahoo_returns": data_path + "/finance/yahoo/cleaned_stock_returns.npz",
+    "yahoo_volume": data_path + "/finance/yahoo/cleaned_stock_volume.npz",
 }
 
 weather_paths = {
-    "NOAA_dataset": "../data/weather/NOAA/NOAA_weather.npz",
-    "ERA5_dataset": "../data/weather/ERA5/ERA5.npz",
+    "NOAA_dataset": data_path + "/weather/NOAA/NOAA_weather.npz",
+    "ERA5_dataset": data_path + "/weather/ERA5/ERA5.npz",
 }
 
 monash_dataset_dict = {
