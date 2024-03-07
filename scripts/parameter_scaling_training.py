@@ -211,7 +211,9 @@ def train(config):
                                 output, batched_data_true
                             )
                             # test_loss_MSE = transformer.MSE(output, batched_data_true)
-                            test_loss_CRPS = transformer.CRPS(output, batched_data_true)
+                            test_loss_CRPS = transformer.crps_student_t_approx(
+                                output, batched_data_true
+                            )
                             # total_MSE_test_loss += (
                             #     test_loss_MSE.item() * current_batch_size
                             # )
@@ -224,7 +226,9 @@ def train(config):
                                 output, batched_data_true
                             )
                             # test_loss_MSE = transformer.MSE(output, batched_data_true)
-                            test_loss_CRPS = transformer.CRPS(output, batched_data_true)
+                            test_loss_CRPS = transformer.crps_student_t_approx(
+                                output, batched_data_true
+                            )
                             # total_MSE_test_loss += (
                             #     test_loss_MSE.item() * current_batch_size
                             # )

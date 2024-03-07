@@ -151,7 +151,7 @@ def parameter_MSEtest_scaling_plot():
         with open(file_name, "r") as file:
             model_dict = json.load(file)
 
-        min_test_loss.append(abs(min(model_dict["MSE_test_losses"])))
+        min_test_loss.append(min(model_dict["MSE_test_losses"]))
 
     min_test_loss = np.array(min_test_loss)
     parameter_count_list = np.array(parameter_count_list)

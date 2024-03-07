@@ -15,4 +15,4 @@ conda activate time
 
 cd /cfs/home/thed7424/TimeTransformers/scripts
 
-python parameter_scaling_training.py configs/small_studentT.yml
+python parameter_scaling_training.py configs/parameter_scaling/small_studentT.yml

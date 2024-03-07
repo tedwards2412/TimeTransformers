@@ -365,17 +365,22 @@ class Decoder_Transformer(nn.Module):
 
         # Draw samples from the Student's t-distribution
         student_t_dist = StudentT(dof, mean, scale)
-        samples = student_t_dist.rsample((num_samples,))
+        samples = student_t_dist.sample((num_samples,))
 
-        # Calculate the empirical CDF of the samples for each item in the batch
-        empirical_cdf = (
-            (samples.unsqueeze(-1) <= y_true.view(1, -1, 1)).float().mean(dim=0)
-        )
+        # # Calculate the empirical CDF of the samples for each item in the batch
+        # empirical_cdf = (
+        #     (samples.unsqueeze(-1) <= y_true.view(1, -1, 1)).float().mean(dim=0)
+        # )
 
-        # Construct the theoretical CDF values for comparison
+        y_true_expanded = y_true.unsqueeze(0)  # Adding a dimension for num_samples
+        empirical_cdf = (samples <= y_true_expanded).float().mean(dim=0)
+        # theoretical_cdf = torch.linspace(
+        #     0, 1, steps=num_samples, device=self.device
+        # ).view(-1, 1)
         theoretical_cdf = torch.linspace(
             0, 1, steps=num_samples, device=self.device
-        ).view(-1, 1)
+        ).view(-1, 1, 1)
+        print(empirical_cdf.shape, y_true_expanded.shape, theoretical_cdf.shape)
 
         # Calculate CRPS using empirical CDF and theoretical CDF
         diff = empirical_cdf - theoretical_cdf
