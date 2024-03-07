@@ -11,7 +11,8 @@ import os
 
 
 data_path = "../../TIME_opensource/final"
-print("Data path: ", data_path)
+# print("Data path: ", data_path)
+
 
 def normalize_data(data, mean, std):
     if std == 0:
@@ -27,8 +28,12 @@ class TimeSeriesDataset(Dataset):
         self.max_sequence_length = max_sequence_length
         # self.means = np.array([np.mean(data[i]) for i in range(len(data))])
         # self.std = np.array([np.std(data[i]) for i in range(len(data))])
-        self.means = np.array([np.mean(data[i]) for i in tqdm(range(len(data)), desc='Calculating means')])
-        self.std = np.array([np.std(data[i]) for i in tqdm(range(len(data)), desc='Calculating std')])
+        self.means = np.array(
+            [np.mean(data[i]) for i in tqdm(range(len(data)), desc="Calculating means")]
+        )
+        self.std = np.array(
+            [np.std(data[i]) for i in tqdm(range(len(data)), desc="Calculating std")]
+        )
         self.miss_vals_mask = miss_vals_mask
 
         # self.data = [
@@ -41,11 +46,17 @@ class TimeSeriesDataset(Dataset):
         # )
         self.data = [
             normalize_data(data[i], self.means[i], self.std[i])
-            for i in tqdm(range(len(data)), desc='Normalizing Data')
+            for i in tqdm(range(len(data)), desc="Normalizing Data")
         ]
-        self.probs = np.array([
-            len(self.data[i]) for i in tqdm(range(len(self.data)), desc='Calculating Probs')
-        ]) / self.total_length()
+        self.probs = (
+            np.array(
+                [
+                    len(self.data[i])
+                    for i in tqdm(range(len(self.data)), desc="Calculating Probs")
+                ]
+            )
+            / self.total_length()
+        )
 
         self.test = test
         self.test_size = test_size
@@ -542,6 +553,7 @@ def add_command_audio_dataset(
         test_masks.append(mask[int(train_split * new_data_length) :])
     return training_data, test_data, train_masks, test_masks
 
+
 def add_arabic_audio_dataset(
     training_data, test_data, train_masks, test_masks, train_split
 ):
@@ -562,6 +574,7 @@ def add_arabic_audio_dataset(
         test_data.append(current_ts[int(train_split * new_data_length) :])
         test_masks.append(mask[int(train_split * new_data_length) :])
     return training_data, test_data, train_masks, test_masks
+
 
 def add_bird_audio_dataset(
     training_data, test_data, train_masks, test_masks, train_split
@@ -584,9 +597,12 @@ def add_bird_audio_dataset(
         test_masks.append(mask[int(train_split * new_data_length) :])
     return training_data, test_data, train_masks, test_masks
 
-audio_paths = {"arabic": data_path + "/audio/arabic_speech_corpus/arabic_speech.npz",
-               "commands": data_path + "/audio/speech_commands/speech_commands.npz",
-               "birds": data_path + "/audio/bird_data/bird_audio.npz" }
+
+audio_paths = {
+    "arabic": data_path + "/audio/arabic_speech_corpus/arabic_speech.npz",
+    "commands": data_path + "/audio/speech_commands/speech_commands.npz",
+    "birds": data_path + "/audio/bird_data/bird_audio.npz",
+}
 
 science_paths = {"ZTF": data_path + "/science/ZTF_supernova/light_curves.npz"}
 

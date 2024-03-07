@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import math
 import torch.utils.checkpoint
+from torch.distributions.studentT import StudentT
 import torch.nn.functional as F
 
 
@@ -348,6 +349,41 @@ class Decoder_Transformer(nn.Module):
         loss = torch.mean(-part1 + part2 + part3)
 
         return loss
+
+    def crps_student_t_approx(
+        self,
+        transformer_pred,
+        y_true,
+        num_samples=1000,
+        epsilon=torch.tensor(1e-6, dtype=torch.float32),
+    ):
+        # Ensure y_true, mean, scale, and dof are all on the same device
+        epsilon = epsilon.to(self.device)
+        mean = transformer_pred[:, :, 0]
+        scale = F.softplus(transformer_pred[:, :, 1]) + epsilon
+        dof = F.softplus(transformer_pred[:, :, 2]) + 2 + epsilon
+
+        # Draw samples from the Student's t-distribution
+        student_t_dist = StudentT(dof, mean, scale)
+        samples = student_t_dist.rsample((num_samples,))
+
+        # Calculate the empirical CDF of the samples for each item in the batch
+        empirical_cdf = (
+            (samples.unsqueeze(-1) <= y_true.view(1, -1, 1)).float().mean(dim=0)
+        )
+
+        # Construct the theoretical CDF values for comparison
+        theoretical_cdf = torch.linspace(
+            0, 1, steps=num_samples, device=self.device
+        ).view(-1, 1)
+
+        # Calculate CRPS using empirical CDF and theoretical CDF
+        diff = empirical_cdf - theoretical_cdf
+        crps = torch.mean(
+            torch.abs(diff), dim=0
+        )  # Mean CRPS across samples, retain batch dimension
+
+        return crps.mean()
 
     # def Gaussian_loss_fixed_var(
     #     self, transformer_pred, y_true, epsilon=torch.tensor(1e-6, dtype=torch.float32)

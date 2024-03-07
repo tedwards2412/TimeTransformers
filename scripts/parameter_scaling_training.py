@@ -149,7 +149,8 @@ def train(config):
     train_losses = []
     test_steps = []
     test_losses = []
-    MSE_test_losses = []
+    # MSE_test_losses = []
+    CRPS_test_losses = []
 
     min_loss = 1e10
     patience_counter = 0
@@ -193,7 +194,8 @@ def train(config):
             if step_counter % evaluation_interval == 0:
                 transformer.eval()
                 total_test_loss = 0
-                total_MSE_test_loss = 0
+                # total_MSE_test_loss = 0
+                total_CRPS_test_loss = 0
                 total_test_samples = 0
 
                 with torch.no_grad():  # Disable gradient calculation
@@ -208,18 +210,26 @@ def train(config):
                             test_loss = transformer.Gaussian_loss(
                                 output, batched_data_true
                             )
-                            test_loss_MSE = transformer.MSE(output, batched_data_true)
-                            total_MSE_test_loss += (
-                                test_loss_MSE.item() * current_batch_size
+                            # test_loss_MSE = transformer.MSE(output, batched_data_true)
+                            test_loss_CRPS = transformer.CRPS(output, batched_data_true)
+                            # total_MSE_test_loss += (
+                            #     test_loss_MSE.item() * current_batch_size
+                            # )
+                            total_CRPS_test_loss += (
+                                test_loss_CRPS.item() * current_batch_size
                             )
 
                         if loss_function == "studentT":
                             test_loss = transformer.studentT_loss(
                                 output, batched_data_true
                             )
-                            test_loss_MSE = transformer.MSE(output, batched_data_true)
-                            total_MSE_test_loss += (
-                                test_loss_MSE.item() * current_batch_size
+                            # test_loss_MSE = transformer.MSE(output, batched_data_true)
+                            test_loss_CRPS = transformer.CRPS(output, batched_data_true)
+                            # total_MSE_test_loss += (
+                            #     test_loss_MSE.item() * current_batch_size
+                            # )
+                            total_CRPS_test_loss += (
+                                test_loss_CRPS.item() * current_batch_size
                             )
 
                         elif loss_function == "MSE":
@@ -230,12 +240,14 @@ def train(config):
 
                 average_test_loss = total_test_loss / total_test_samples
                 if loss_function == "Gaussian" or loss_function == "studentT":
-                    average_MSE_test_loss = total_MSE_test_loss / total_test_samples
+                    # average_MSE_test_loss = total_MSE_test_loss / total_test_samples
+                    average_CRPS_test_loss = total_CRPS_test_loss / total_test_samples
                     wandb.log(
-                        {"MSE_test_loss": average_MSE_test_loss, "step": step_counter}
+                        {"CRPS_test_loss": average_CRPS_test_loss, "step": step_counter}
                     )
 
-                MSE_test_losses.append(average_MSE_test_loss)
+                # MSE_test_losses.append(average_MSE_test_loss)
+                CRPS_test_losses.append(average_CRPS_test_loss)
                 test_losses.append(average_test_loss)
                 test_steps.append(step_counter)
                 wandb.log({"test_loss": average_test_loss, "step": step_counter})
@@ -269,7 +281,7 @@ def train(config):
             "train_losses": train_losses,
             "train_epochs": train_steps,
             "test_losses": test_losses,
-            "MSE_test_losses": MSE_test_losses,
+            "CRPS_test_losses": CRPS_test_losses,
             "test_epochs": test_steps,
             "model_file_name": f"{model_file_name}",
         }
