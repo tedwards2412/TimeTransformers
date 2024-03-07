@@ -354,7 +354,7 @@ class Decoder_Transformer(nn.Module):
         self,
         transformer_pred,
         y_true,
-        num_samples=1000,
+        num_samples=100,
         epsilon=torch.tensor(1e-6, dtype=torch.float32),
     ):
         # Ensure y_true, mean, scale, and dof are all on the same device
@@ -385,7 +385,7 @@ class Decoder_Transformer(nn.Module):
         # Calculate CRPS using empirical CDF and theoretical CDF
         diff = empirical_cdf - theoretical_cdf
         crps = torch.mean(
-            torch.abs(diff), dim=0
+            diff**2, dim=0
         )  # Mean CRPS across samples, retain batch dimension
 
         return crps.mean()
