@@ -354,7 +354,7 @@ class Decoder_Transformer(nn.Module):
         self,
         transformer_pred,
         y_true,
-        num_samples=100,
+        num_samples=500,
         epsilon=torch.tensor(1e-6, dtype=torch.float32),
     ):
         # Ensure y_true, mean, scale, and dof are all on the same device
