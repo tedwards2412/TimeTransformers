@@ -380,7 +380,6 @@ class Decoder_Transformer(nn.Module):
         theoretical_cdf = torch.linspace(
             0, 1, steps=num_samples, device=self.device
         ).view(-1, 1, 1)
-        print(empirical_cdf.shape, y_true_expanded.shape, theoretical_cdf.shape)
 
         # Calculate CRPS using empirical CDF and theoretical CDF
         diff = empirical_cdf - theoretical_cdf

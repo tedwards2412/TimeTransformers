@@ -48,3 +48,7 @@ datasets:
     - "yahoo"
   science:
     - "ZTF"
+  audio:
+    - "arabic"
+    - "commands"
+    - "birds"
