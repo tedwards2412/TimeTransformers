@@ -8,6 +8,7 @@ from tqdm import tqdm
 import random
 import pandas as pd
 import os
+import glob
 
 
 data_path = "../../TIME_opensource/final"
@@ -409,6 +410,18 @@ def load_datasets(datasets, train_split):
             ) = add_bird_audio_dataset(
                 training_data_list, test_data_list, train_masks, test_masks, train_split
             )
+    if datasets["energy"]:
+        print("Adding energy data...")
+        if "buildingbench" in datasets["energy"]:
+            (
+                training_data_list,
+                test_data_list,
+                train_masks,
+                test_masks,
+            ) = add_buildingbench_dataset(
+                training_data_list, test_data_list, train_masks, test_masks, train_split
+            )
+
     return training_data_list, test_data_list, train_masks, test_masks
 
 
@@ -450,6 +463,30 @@ def convert_df_to_numpy(dfs, train_split=0.8):
             train_masks.append(mask[: int(train_split * new_data_length)])
 
             test_data.append(new_data[int(train_split * new_data_length) :])
+            test_masks.append(mask[int(train_split * new_data_length) :])
+
+    return training_data, test_data, train_masks, test_masks
+
+
+def add_buildingbench_dataset(
+    training_data, test_data, train_masks, test_masks, train_split
+):
+    buildingbench_files = glob.glob(energy_paths["buildingbench"] + "*.npy")
+    rnd_indices = np.random.choice(len(buildingbench_files), 40, replace=False)
+
+    for rnd in tqdm(rnd_indices):
+        buildingbench_data = np.load(buildingbench_files[rnd])
+
+        for i in range(buildingbench_data.shape[0]):
+            current_ts = buildingbench_data[i]
+            new_data_length = current_ts.shape[0]
+            mask = np.ones(new_data_length)
+
+            # Need to append test and train masks
+            training_data.append(current_ts[: int(train_split * new_data_length)])
+            train_masks.append(mask[: int(train_split * new_data_length)])
+
+            test_data.append(current_ts[int(train_split * new_data_length) :])
             test_masks.append(mask[int(train_split * new_data_length) :])
 
     return training_data, test_data, train_masks, test_masks
@@ -597,6 +634,10 @@ def add_bird_audio_dataset(
         test_masks.append(mask[int(train_split * new_data_length) :])
     return training_data, test_data, train_masks, test_masks
 
+
+energy_paths = {
+    "buildingbench": data_path + "/energy/",
+}
 
 audio_paths = {
     "arabic": data_path + "/audio/arabic_speech_corpus/arabic_speech.npz",
