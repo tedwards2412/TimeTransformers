@@ -478,6 +478,29 @@ def add_weather_dataset(
     return training_data, test_data, train_masks, test_masks
 
 
+def add_ca_traffic_dataset(
+    training_data, test_data, train_masks, test_masks, train_split, path
+):
+    traffic_data = np.load(path)
+
+    for data_name in tqdm(traffic_data.files):
+        data = traffic_data[data_name].T    # tranpose since the original format is [time_steps x num_series]
+
+        for i in range(data.shape[0]):
+            current_ts = data[i]
+            new_data_length = current_ts.shape[0]
+            mask = np.ones(new_data_length)
+
+            # Need to append test and train masks
+            training_data.append(current_ts[: int(train_split * new_data_length)])
+            train_masks.append(mask[: int(train_split * new_data_length)])
+
+            test_data.append(current_ts[int(train_split * new_data_length) :])
+            test_masks.append(mask[int(train_split * new_data_length) :])
+
+    return training_data, test_data, train_masks, test_masks
+
+
 def add_yahoo_dataset(training_data, test_data, train_masks, test_masks, train_split):
     stock_returns = np.load(finance_paths["yahoo_returns"], allow_pickle=True)
     stock_volume = np.load(finance_paths["yahoo_volume"], allow_pickle=True)
