@@ -358,6 +358,24 @@ def load_datasets(datasets, train_split):
                 train_split,
                 path,
             )
+    if datasets["traffic"]:
+        print("Adding traffic data...")
+        if "CA" in datasets["traffic"]:
+            print("Adding California traffic data...")
+            path = traffic_paths["CA"]
+            (
+                training_data_list,
+                test_data_list,
+                train_masks,
+                test_masks,
+            ) = add_ca_traffic_dataset(
+                training_data_list,
+                test_data_list,
+                train_masks,
+                test_masks,
+                train_split,
+                path,
+            )
     if datasets["finance"]:
         print("Adding finance data...")
         if "yahoo" in datasets["finance"]:
@@ -521,7 +539,9 @@ def add_ca_traffic_dataset(
     traffic_data = np.load(path)
 
     for data_name in tqdm(traffic_data.files):
-        data = traffic_data[data_name].T    # tranpose since the original format is [time_steps x num_series]
+        data = traffic_data[
+            data_name
+        ].T  # tranpose since the original format is [time_steps x num_series]
 
         for i in range(data.shape[0]):
             current_ts = data[i]
@@ -657,6 +677,8 @@ def add_bird_audio_dataset(
         test_masks.append(mask[int(train_split * new_data_length) :])
     return training_data, test_data, train_masks, test_masks
 
+
+traffic_paths = {"CA": data_path + "/traffic/ca_his_sampled_2017-2021.npz"}
 
 energy_paths = {
     "buildingbench": data_path + "/energy/",
