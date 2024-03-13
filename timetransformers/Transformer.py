@@ -354,7 +354,7 @@ class Decoder_Transformer(nn.Module):
         self,
         transformer_pred,
         y_true,
-        num_samples=500,
+        num_samples=1000,
         epsilon=torch.tensor(1e-6, dtype=torch.float32),
     ):
         epsilon = epsilon.to(self.device)
