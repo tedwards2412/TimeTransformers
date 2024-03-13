@@ -194,7 +194,7 @@ def train(config):
             if step_counter % evaluation_interval == 0:
                 transformer.eval()
                 total_test_loss = 0
-                # total_MSE_test_loss = 0
+                total_MSE_test_loss = 0
                 total_CRPS_test_loss = 0
                 total_test_samples = 0
 
