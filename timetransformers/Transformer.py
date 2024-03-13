@@ -350,35 +350,6 @@ class Decoder_Transformer(nn.Module):
 
         return loss
 
-    # def crps_student_t_approx(
-    #     self,
-    #     transformer_pred,
-    #     y_true,
-    #     num_samples=500,
-    #     epsilon=torch.tensor(1e-6, dtype=torch.float32),
-    # ):
-    #     epsilon = epsilon.to(self.device)
-    #     mean = transformer_pred[:, :, 0]
-    #     scale = F.softplus(transformer_pred[:, :, 1]) + epsilon
-    #     dof = F.softplus(transformer_pred[:, :, 2]) + epsilon + 2
-
-    #     # Ensure y_true, mean, scale, and dof are all on the same device
-    #     y_true = y_true.to(self.device)
-
-    #     # Draw samples from the Student's t-distribution
-    #     student_t_dist = StudentT(dof, mean, scale)
-    #     samples = student_t_dist.rsample(
-    #         (num_samples,)
-    #     )  # Shape: [num_samples, batch_size, seq_length]
-
-    #     y_true_expanded = y_true.unsqueeze(0)  # Adding a dimension for num_samples
-
-    #     # Calculate the squared difference between samples and y_true, then take mean across samples
-    #     # This is a simple and direct way to compute a metric similar to CRPS without requiring the theoretical CDF
-    #     squared_diff = (samples - y_true_expanded) ** 2
-    #     crps_approx = torch.mean(squared_diff, dim=0)
-    #     return crps_approx.mean()
-
     def crps_student_t_approx(
         self,
         transformer_pred,
@@ -390,6 +361,8 @@ class Decoder_Transformer(nn.Module):
         mean = transformer_pred[:, :, 0]
         scale = F.softplus(transformer_pred[:, :, 1]) + epsilon
         dof = F.softplus(transformer_pred[:, :, 2]) + epsilon + 2
+        # print("standard deviation", scale)
+        # print("dof", dof)
 
         # Ensure y_true, mean, scale, and dof are all on the same device
         y_true = y_true.to(self.device)
@@ -417,16 +390,22 @@ class Decoder_Transformer(nn.Module):
         target_cdf = (samples_sorted >= y_true_expanded).float()
         # import matplotlib.pyplot as plt
 
-        # # print(samples_sorted[:, 0, 0])
-        # # print(empirical_cdf[:, 0, 0], target_cdf[:, 0, 0])
+        # # # print(samples_sorted[:, 0, 0])
+        # # # print(empirical_cdf[:, 0, 0], target_cdf[:, 0, 0])
         # plt.plot(samples_sorted[:, 0, 0], empirical_cdf[:, 0, 0].cpu().numpy())
         # plt.plot(samples_sorted[:, 0, 0], target_cdf[:, 0, 0].cpu().numpy())
         # plt.show()
 
         # Calculate CRPS as the mean squared difference between empirical CDF and target CDF
-        crps = torch.mean((empirical_cdf - target_cdf) ** 2)
+        # crps = torch.mean((empirical_cdf - target_cdf) ** 2)
+        # print((empirical_cdf - target_cdf).shape)
+        crps = torch.trapz((empirical_cdf - target_cdf) ** 2, samples_sorted, dim=0)
+        # print(crps.shape)
 
-        return crps
+        # plt.hist(crps.cpu().numpy().flatten(), bins=20)
+        # plt.show()
+        # print(crps.std())
+        return crps.mean()
 
     def MSE(self, transformer_pred, y_true):
         # Splitting the output into mean and variance
