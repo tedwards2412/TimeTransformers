@@ -537,23 +537,19 @@ def add_ca_traffic_dataset(
     training_data, test_data, train_masks, test_masks, train_split, path
 ):
     traffic_data = np.load(path)
+    data = traffic_data["arr_0"]
 
-    for data_name in tqdm(traffic_data.files):
-        data = traffic_data[
-            data_name
-        ].T  # tranpose since the original format is [time_steps x num_series]
+    for i in range(data.shape[0]):
+        current_ts = data[i]
+        new_data_length = current_ts.shape[0]
+        mask = ~np.isnan(current_ts)
 
-        for i in range(data.shape[0]):
-            current_ts = data[i]
-            new_data_length = current_ts.shape[0]
-            mask = np.ones(new_data_length)
+        # Need to append test and train masks
+        training_data.append(current_ts[: int(train_split * new_data_length)])
+        train_masks.append(mask[: int(train_split * new_data_length)])
 
-            # Need to append test and train masks
-            training_data.append(current_ts[: int(train_split * new_data_length)])
-            train_masks.append(mask[: int(train_split * new_data_length)])
-
-            test_data.append(current_ts[int(train_split * new_data_length) :])
-            test_masks.append(mask[int(train_split * new_data_length) :])
+        test_data.append(current_ts[int(train_split * new_data_length) :])
+        test_masks.append(mask[int(train_split * new_data_length) :])
 
     return training_data, test_data, train_masks, test_masks
 
@@ -678,7 +674,7 @@ def add_bird_audio_dataset(
     return training_data, test_data, train_masks, test_masks
 
 
-traffic_paths = {"CA": data_path + "/traffic/ca_his_sampled_2017-2021.npz"}
+traffic_paths = {"CA": data_path + "/traffic/processed_ca_traffic_data.npz"}
 
 energy_paths = {
     "buildingbench": data_path + "/energy/",
