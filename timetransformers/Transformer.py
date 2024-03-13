@@ -316,21 +316,26 @@ class Decoder_Transformer(nn.Module):
         # output = self.distribution_head(src)
         # return output
 
-    def Gaussian_loss(
-        self, transformer_pred, y_true, epsilon=torch.tensor(1e-6, dtype=torch.float32)
-    ):
-        epsilon = epsilon.to(self.device)
-        # Splitting the output into mean and variance
-        mean = transformer_pred[:, :, 0]
-        var = F.softplus(transformer_pred[:, :, 1]) + epsilon
+    # Depreciated
+    # def Gaussian_loss(
+    #     self, transformer_pred, y_true, epsilon=torch.tensor(1e-6, dtype=torch.float32)
+    # ):
+    #     epsilon = epsilon.to(self.device)
+    #     # Splitting the output into mean and variance
+    #     mean = transformer_pred[:, :, 0]
+    #     var = F.softplus(transformer_pred[:, :, 1]) + epsilon
 
-        # Calculating the Gaussian negative log-likelihood loss
-        loss = torch.mean((y_true - mean) ** 2 / var + torch.log(var))
+    #     # Calculating the Gaussian negative log-likelihood loss
+    #     loss = torch.mean((y_true - mean) ** 2 / var + torch.log(var))
 
-        return loss
+    #     return loss
 
     def studentT_loss(
-        self, transformer_pred, y_true, epsilon=torch.tensor(1e-6, dtype=torch.float32)
+        self,
+        transformer_pred,
+        y_true,
+        epsilon=torch.tensor(1e-6, dtype=torch.float32),
+        mask=None,
     ):
         epsilon = epsilon.to(self.device)
 
@@ -338,6 +343,11 @@ class Decoder_Transformer(nn.Module):
         mean = transformer_pred[:, :, 0]
         scale = F.softplus(transformer_pred[:, :, 1]) + epsilon
         dof = F.softplus(transformer_pred[:, :, 2]) + 2 + epsilon
+        # if mask is not None:
+        y_true = y_true[mask]
+        mean = mean[mask]
+        scale = scale[mask]
+        dof = dof[mask]
 
         # Calculating the Student-t negative log-likelihood loss
         part1 = torch.lgamma((dof + 1) / 2) - torch.lgamma(dof / 2)
@@ -356,17 +366,20 @@ class Decoder_Transformer(nn.Module):
         y_true,
         num_samples=1000,
         epsilon=torch.tensor(1e-6, dtype=torch.float32),
+        mask=None,
     ):
         epsilon = epsilon.to(self.device)
         mean = transformer_pred[:, :, 0]
         scale = F.softplus(transformer_pred[:, :, 1]) + epsilon
         dof = F.softplus(transformer_pred[:, :, 2]) + epsilon + 2
-        # print("standard deviation", scale)
-        # print("dof", dof)
 
-        # Ensure y_true, mean, scale, and dof are all on the same device
-        y_true = y_true.to(self.device)
+        # if mask is not None:
+        y_true = y_true[mask]
+        mean = mean[mask]
+        scale = scale[mask]
+        dof = dof[mask]
 
+        print(mean.shape, scale.shape, dof.shape, y_true.shape)
         # Draw samples from the Student's t-distribution
         student_t_dist = StudentT(dof, mean, scale)
         samples = student_t_dist.rsample(
@@ -378,7 +391,7 @@ class Decoder_Transformer(nn.Module):
 
         # Calculate empirical CDF values for each sample
         ranks = (
-            torch.arange(1, num_samples + 1, device=self.device).view(num_samples, 1, 1)
+            torch.arange(1, num_samples + 1, device=self.device).view(num_samples, 1)
             / num_samples
         )
         empirical_cdf = ranks.expand_as(samples_sorted)
@@ -388,34 +401,20 @@ class Decoder_Transformer(nn.Module):
 
         # Compute the "target" step CDF for observed values (0s before y_true, 1s after)
         target_cdf = (samples_sorted >= y_true_expanded).float()
-        # import matplotlib.pyplot as plt
-
-        # # # print(samples_sorted[:, 0, 0])
-        # # # print(empirical_cdf[:, 0, 0], target_cdf[:, 0, 0])
-        # plt.plot(samples_sorted[:, 0, 0], empirical_cdf[:, 0, 0].cpu().numpy())
-        # plt.plot(samples_sorted[:, 0, 0], target_cdf[:, 0, 0].cpu().numpy())
-        # plt.show()
-
-        # Calculate CRPS as the mean squared difference between empirical CDF and target CDF
-        # crps = torch.mean((empirical_cdf - target_cdf) ** 2)
-        # print((empirical_cdf - target_cdf).shape)
         crps = torch.trapz((empirical_cdf - target_cdf) ** 2, samples_sorted, dim=0)
-        # print(crps.shape)
-
-        # plt.hist(crps.cpu().numpy().flatten(), bins=20)
-        # plt.show()
-        # print(crps.std())
         return crps.mean()
 
-    def MSE(self, transformer_pred, y_true):
+    def MSE(self, transformer_pred, y_true, mask=None):
         # Splitting the output into mean and variance
         mean = transformer_pred[:, :, 0]
         # var = torch.tensor(1.0, dtype=torch.float32).to(self.device)
 
         # Calculating the Gaussian negative log-likelihood loss
-        loss = torch.mean((y_true - mean) ** 2)
+        loss = (y_true - mean) ** 2
+        # if mask is not None:
+        loss = loss[mask]
 
-        return loss
+        return loss.mean()
 
     def generate(self, src, n_sequence):
         # Generate the next n_sequence elements

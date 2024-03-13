@@ -12,6 +12,7 @@ import glob
 
 
 data_path = "../../TIME_opensource/final"
+# data_path = ""
 # print("Data path: ", data_path)
 
 
@@ -156,7 +157,7 @@ def download_single_datafile(dataset_name, dataset_id):
         print(f"Downloaded {dataset_name}.zip")
 
         # Unzip the dataset
-        os.system(f"unzip -o {zip_file_path} -d {data_path}/monash")
+        os.system(f"unzip -o {zip_file_path} -d {tsf_file_path}")
         print(f"Unzipped {dataset_name}.zip")
 
         # Remove the zip file
@@ -543,6 +544,7 @@ def add_ca_traffic_dataset(
         current_ts = data[i]
         new_data_length = current_ts.shape[0]
         mask = ~np.isnan(current_ts)
+        current_ts[~mask] = 0.0
 
         # Need to append test and train masks
         training_data.append(current_ts[: int(train_split * new_data_length)])
