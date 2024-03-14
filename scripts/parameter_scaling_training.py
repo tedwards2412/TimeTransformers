@@ -175,7 +175,9 @@ def train(config):
             if loss_function == "Gaussian":
                 loss = transformer.Gaussian_loss(output, batched_data_true)
             elif loss_function == "studentT":
-                loss = transformer.studentT_loss(output, batched_data_true)
+                loss = transformer.studentT_loss(
+                    output, batched_data_true, mask=mask.to(device)
+                )
             elif loss_function == "MSE":
                 loss = transformer.MSE(output, batched_data_true)
 
@@ -223,11 +225,13 @@ def train(config):
 
                         if loss_function == "studentT":
                             test_loss = transformer.studentT_loss(
-                                output, batched_data_true
+                                output, batched_data_true, mask=mask.to(device)
                             )
-                            test_loss_MSE = transformer.MSE(output, batched_data_true)
+                            test_loss_MSE = transformer.MSE(
+                                output, batched_data_true, mask=mask.to(device)
+                            )
                             test_loss_CRPS = transformer.crps_student_t_approx(
-                                output, batched_data_true
+                                output, batched_data_true, mask=mask.to(device)
                             )
                             total_MSE_test_loss += (
                                 test_loss_MSE.item() * current_batch_size
@@ -237,7 +241,9 @@ def train(config):
                             )
 
                         elif loss_function == "MSE":
-                            test_loss = transformer.MSE(output, batched_data_true)
+                            test_loss = transformer.MSE(
+                                output, batched_data_true, mask=mask.to(device)
+                            )
 
                         total_test_loss += test_loss.item() * current_batch_size
                         total_test_samples += current_batch_size

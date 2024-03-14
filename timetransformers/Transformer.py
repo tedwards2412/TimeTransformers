@@ -379,7 +379,7 @@ class Decoder_Transformer(nn.Module):
         scale = scale[mask]
         dof = dof[mask]
 
-        print(mean.shape, scale.shape, dof.shape, y_true.shape)
+        # print(mean.shape, scale.shape, dof.shape, y_true.shape)
         # Draw samples from the Student's t-distribution
         student_t_dist = StudentT(dof, mean, scale)
         samples = student_t_dist.rsample(
