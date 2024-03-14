@@ -1,9 +1,9 @@
 transformer:
   output_dim: 3
-  d_model: 512
+  d_model: 8
   num_heads: 1
-  num_layers: 12
-  d_ff: 512
+  num_layers: 1
+  d_ff: 8
   dropout: 0.1
   num_distribution_layers: 4
   loss_func: "studentT" # Should be Gaussian, MSE, or studentT
@@ -20,8 +20,8 @@ train:
   test_size: 0.01
 
 datasets:
-  monash:
-    - "electricity_hourly_dataset"
+  monash: # Total: 503,723,130 #### FIXME: Need to be using "with_missing_values" datasets
+    - "electricity_hourly_dataset" # 8,443,584
     - "traffic_hourly_dataset"
     - "traffic_weekly_dataset"
     - "solar_4_seconds_dataset"
@@ -41,14 +41,21 @@ datasets:
     - "tourism_quarterly_dataset"
     - "elecdemand_dataset"
     - "sunspot_dataset_without_missing_values"
-  weather:
+    - "wind_farms_minutely_dataset_without_missing_values" # Might be problematic
+    - "london_smart_meters_dataset_with_missing_values" # Might be problematic
+    - "kaggle_web_traffic_dataset_without_missing_values" # Might be problematic Add 455,192,545
+  weather: # Total: 1,565,432,018
     - "NOAA_dataset"
     - "ERA5_dataset"
-  finance:
+  finance: # 42,578,670
     - "yahoo"
   science:
     - "ZTF"
-  audio:
+  audio: # 1,980,610,601
     - "arabic"
     - "commands"
     - "birds"
+  energy: # 2,533,584,545
+    - "buildingbench"
+  traffic: # 1,507,545,600
+    - "CA"
