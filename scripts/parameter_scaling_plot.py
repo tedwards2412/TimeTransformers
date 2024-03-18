@@ -2,11 +2,42 @@ import matplotlib.pyplot as plt
 import json
 import numpy as np
 from scipy.optimize import curve_fit
+import matplotlib as mpl
 
 # color_list = ["purple", "#306B37", "darkgoldenrod", "#3F7BB6", "#BF4145", "#CF630A"]
 # color_list = ["#2E4854", "#557B82", "#BAB2A9", "#C98769", "#A1553A", "darkgoldenrod"]
 # color_list = ["#12464F", "#DF543E", "#C8943B", "#378F8C", "#AD9487"]
 # color_list = ["#909B55", "#4B3025", "#AF5D25", "#C3B426", "#C8A895"]
+params = {
+    "font.size": 18,
+    "legend.fontsize": 18,
+    "legend.frameon": False,
+    "axes.labelsize": 18,
+    "axes.titlesize": 18,
+    "xtick.labelsize": 18,
+    "ytick.labelsize": 18,
+    "figure.figsize": (7, 5),
+    "xtick.top": True,
+    "axes.unicode_minus": False,
+    "ytick.right": True,
+    "xtick.bottom": True,
+    "ytick.left": True,
+    "xtick.major.pad": 8,
+    "xtick.major.size": 8,
+    "xtick.minor.size": 4,
+    "ytick.major.size": 8,
+    "ytick.minor.size": 4,
+    "xtick.direction": "in",
+    "ytick.direction": "in",
+    "axes.linewidth": 1.5,
+    "text.usetex": False,
+    "font.family": "serif",
+    "font.serif": "cmr10",
+    "mathtext.fontset": "cm",
+    "axes.formatter.use_mathtext": True,  # needed when using cm=cmr10 for normal text
+}
+mpl.rcParams.update(params)
+
 color_list = [
     "#4D4D42",
     "#A0071F",
@@ -27,75 +58,10 @@ def rolling_average(data, window_size):
     ]
 
 
-# def plot_loss_small_models():
-#     parameter_count = 8672
-#     string_list = ["Gaussian", "Gaussian_fixed_var"]
-#     for i, s in enumerate(string_list):
-#         plt.figure(figsize=(8, 6))
-#         file_name = f"results/transformer_{parameter_count}_{s}_training.json"
-
-#         with open(file_name, "r") as file:
-#             model_dict = json.load(file)
-
-#         plt.plot(
-#             model_dict["train_epochs"],
-#             model_dict["train_losses"],
-#             color=color_list[i],
-#             ls=ls_list[i],
-#             alpha=0.2,
-#             zorder=-10,
-#         )
-#         plt.plot(
-#             model_dict["test_epochs"],
-#             model_dict["test_losses"],
-#             color=color_list[i],
-#             ls=ls_list[i],
-#             label=f"{parameter_count} parameters",
-#         )
-
-#         plt.legend()
-#         plt.xlabel("Epoch")
-#         plt.ylim(-2, 10)
-#         plt.ylabel("Loss")
-#         plt.savefig(f"plots/loss_{parameter_count}_{s}.pdf", bbox_inches="tight")
-
-
-# def plot_loss():
-#     parameter_count_list = [8762]  # , 18418, 40418, 133218]
-#     for i, parameter_count in enumerate(parameter_count_list):
-#         plt.figure(figsize=(8, 6))
-#         file_name = f"results/transformer_{parameter_count}_training.json"
-
-#         with open(file_name, "r") as file:
-#             model_dict = json.load(file)
-
-#         plt.plot(
-#             model_dict["train_epochs"],
-#             model_dict["train_losses"],
-#             color=color_list[i],
-#             ls=ls_list[i],
-#             alpha=0.2,
-#             zorder=-10,
-#         )
-#         plt.plot(
-#             model_dict["test_epochs"],
-#             model_dict["test_losses"],
-#             color=color_list[i],
-#             ls=ls_list[i],
-#             label=f"{parameter_count} parameters",
-#         )
-
-#         plt.legend()
-#         plt.xlabel("Epoch")
-#         plt.ylim(-5, 5)
-#         plt.ylabel("Loss")
-#         plt.savefig(f"plots/loss_{parameter_count}.pdf", bbox_inches="tight")
-
-
 def plot_combined_losses():
     # parameter_count_list = [2771, 8387, 24451, 130051, 879619, 3430403, 5013507]
-    parameter_count_list = [2771, 24451, 5013507, 19857411]
-    fig, axes = plt.subplots(1, 2, figsize=(24, 6))
+    parameter_count_list = [2771, 130051, 19857411]
+    fig, axes = plt.subplots(1, 3, figsize=(30, 6))
 
     for i, parameter_count in enumerate(parameter_count_list):
         file_name = f"results/parameterscaling_{parameter_count}_studentT_training.json"
@@ -113,17 +79,6 @@ def plot_combined_losses():
         )
         axes[0].set_xlabel("Epoch")
         axes[0].set_ylabel("Train Loss")
-        # # Set your desired window size for the rolling average
-        # window_size = 20  # You can adjust this value
-
-        # # Calculate rolling average
-        # rolled_avg_losses = rolling_average(
-        #     np.clip(model_dict["test_losses"], -100, 1), window_size
-        # )
-
-        # # Adjust the epochs to match the length of the rolled average array
-        # # (since the first few values don't have a full window)
-        # rolled_avg_epochs = model_dict["test_epochs"][window_size - 1 :]
 
         axes[1].plot(
             model_dict["test_epochs"],
@@ -135,24 +90,100 @@ def plot_combined_losses():
         axes[1].set_xlabel("Epoch")
         axes[1].set_ylabel("Test Loss")
 
-        # axes[2].semilogy(
-        #     model_dict["test_epochs"],
-        #     model_dict["MSE_test_losses"],
-        #     color=color_list[i],
-        #     ls=ls_list[i],
-        #     label=f"{parameter_count} parameters",
-        # )
-        # axes[2].legend()
-        # axes[2].set_xlabel("Epoch")
-        # axes[2].set_ylabel("MSE Test Loss")
+        axes[2].semilogy(
+            model_dict["test_epochs"],
+            model_dict["CRPS_test_losses"],
+            color=color_list[i],
+            ls=ls_list[i],
+            label=f"{parameter_count} parameters",
+        )
+        axes[2].legend()
+        axes[2].set_xlabel("Epoch")
+        axes[2].set_ylabel("CRPS Test Loss")
 
     plt.savefig("plots/loss_studentT.pdf", bbox_inches="tight")
 
 
-# def parameter_MSEtest_scaling_plot():
+def parameter_MSE_CRPS_scaling_plot():
+    min_MSE_test_loss = []
+    min_CRPS_test_loss = []
+    min_test_loss = []
+    # parameter_count_list = [2771, 8387, 24451, 130051, 879619, 3430403, 5013507]
+    parameter_count_list = [2771, 130051, 19857411]
+    # 130051, 24451, 2771, 5013507, 8387, 879619
+
+    for parameter_count in parameter_count_list:
+        file_name = f"results/parameterscaling_{parameter_count}_studentT_training.json"
+
+        with open(file_name, "r") as file:
+            model_dict = json.load(file)
+
+        min_MSE_test_loss.append(min(model_dict["MSE_test_losses"]))
+        min_CRPS_test_loss.append(min(model_dict["CRPS_test_losses"]))
+        min_test_loss.append(min(model_dict["test_losses"]) + 1)
+
+    min_MSE_test_loss = np.array(min_MSE_test_loss)
+    min_CRPS_test_loss = np.array(min_CRPS_test_loss)
+    min_test_loss = np.array(min_test_loss)
+    parameter_count_list = np.array(parameter_count_list)
+
+    # Power law function
+    def power_law(x, loga, b):
+        a = 10**loga
+        return (x / a) ** b
+
+    # Curve fitting
+    params, covariance = curve_fit(
+        power_law, parameter_count_list, min_test_loss, p0=[5.0, -1.0]
+    )
+
+    params_MSE, covariance_MSE = curve_fit(
+        power_law, parameter_count_list, min_MSE_test_loss, p0=[5.0, -1.0]
+    )
+
+    params_CRPS, covariance_CRPS = curve_fit(
+        power_law, parameter_count_list, min_CRPS_test_loss, p0=[5.0, -1.0]
+    )
+
+    # Extracting the parameters
+    a, b = params
+    print("Normalization constant: ", a)
+    print("Power law exponent: ", b)
+
+    a_MSE, b_MSE = params_MSE
+    print("Normalization constant: ", a_MSE)
+    print("Power law exponent: ", b_MSE)
+
+    a_CRPS, b_CRPS = params_CRPS
+    print("Normalization constant: ", a_CRPS)
+    print("Power law exponent: ", b_CRPS)
+
+    N_arr = np.geomspace(1e3, 1e8)
+
+    fig, axes = plt.subplots(1, 3, figsize=(30, 6))
+    axes[0].scatter(parameter_count_list, min_MSE_test_loss, color=color_list[0])
+    axes[0].loglog(N_arr, power_law(N_arr, a_MSE, b_MSE), ls="--", color="gray")
+    axes[0].set_xlabel("Number of parameters")
+    axes[0].set_ylabel("Minimum MSE Test Loss")
+
+    axes[1].scatter(parameter_count_list, min_CRPS_test_loss, color=color_list[0])
+    axes[1].loglog(N_arr, power_law(N_arr, a_CRPS, b_CRPS), ls="--", color="gray")
+    axes[1].set_xlabel("Number of parameters")
+    axes[1].set_ylabel("Minimum CRPS Test Loss")
+
+    axes[2].scatter(parameter_count_list, min_test_loss, color=color_list[0])
+    axes[2].loglog(N_arr, power_law(N_arr, a, b), ls="--", color="gray")
+    axes[2].set_xlabel("Number of parameters")
+    axes[2].set_ylabel("Minimum Test Loss + 1")
+
+    plt.savefig("plots/parameters_vs_loss_studentT.pdf", bbox_inches="tight")
+
+
+# def parameter_test_scaling_plot():
 #     min_test_loss = []
-#     parameter_count_list = [2771, 8387, 24451, 130051, 879619, 3430403, 5013507]
-#     # 130051, 24451, 2771, 5013507, 8387, 879619
+#     # parameter_count_list = [2771, 8387, 24451, 130051, 879619, 3430403, 5013507]
+#     # parameter_count_list = [2771, 24451, 5013507, 19857411]
+#     parameter_count_list = [2771, 130051, 19857411]
 
 #     for parameter_count in parameter_count_list:
 #         file_name = f"results/parameterscaling_{parameter_count}_studentT_training.json"
@@ -160,7 +191,7 @@ def plot_combined_losses():
 #         with open(file_name, "r") as file:
 #             model_dict = json.load(file)
 
-#         min_test_loss.append(min(model_dict["MSE_test_losses"]))
+#         min_test_loss.append(min(model_dict["test_losses"]) + 1)
 
 #     min_test_loss = np.array(min_test_loss)
 #     parameter_count_list = np.array(parameter_count_list)
@@ -172,7 +203,7 @@ def plot_combined_losses():
 
 #     # Curve fitting
 #     params, covariance = curve_fit(
-#         power_law, parameter_count_list, min_test_loss, p0=[5.0, -1.0]
+#         power_law, parameter_count_list, min_test_loss, p0=[5.0, -0.0]
 #     )
 
 #     # Extracting the parameters
@@ -180,7 +211,7 @@ def plot_combined_losses():
 #     print("Normalization constant: ", a)
 #     print("Power law exponent: ", b)
 
-#     N_arr = np.geomspace(1e3, 1e7)
+#     N_arr = np.geomspace(1e3, 1e8)
 
 #     plt.figure(figsize=(8, 6))
 #     plt.scatter(parameter_count_list, min_test_loss, color=color_list[0])
@@ -188,60 +219,13 @@ def plot_combined_losses():
 #     plt.xscale("log")
 #     plt.yscale("log")
 #     plt.xlabel("Number of parameters")
-#     plt.ylabel("Minimum MSE Test Loss")
-#     # plt.ylim(9e-2, 1.8e-1)
-#     # plt.xlim(5e3, 1e7)
-#     plt.savefig("plots/parameters_vs_loss_studentT.pdf", bbox_inches="tight")
-
-
-def parameter_test_scaling_plot():
-    min_test_loss = []
-    # parameter_count_list = [2771, 8387, 24451, 130051, 879619, 3430403, 5013507]
-    parameter_count_list = [2771, 24451, 5013507, 19857411]
-
-    for parameter_count in parameter_count_list:
-        file_name = f"results/parameterscaling_{parameter_count}_studentT_training.json"
-
-        with open(file_name, "r") as file:
-            model_dict = json.load(file)
-
-        min_test_loss.append(min(model_dict["test_losses"]) + 1)
-
-    min_test_loss = np.array(min_test_loss)
-    parameter_count_list = np.array(parameter_count_list)
-
-    # Power law function
-    def power_law(x, loga, b):
-        a = 10**loga
-        return (x / a) ** b
-
-    # Curve fitting
-    params, covariance = curve_fit(
-        power_law, parameter_count_list, min_test_loss, p0=[5.0, -0.0]
-    )
-
-    # Extracting the parameters
-    a, b = params
-    print("Normalization constant: ", a)
-    print("Power law exponent: ", b)
-
-    N_arr = np.geomspace(1e3, 1e8)
-
-    plt.figure(figsize=(8, 6))
-    plt.scatter(parameter_count_list, min_test_loss, color=color_list[0])
-    plt.plot(N_arr, power_law(N_arr, a, b), ls="--", color="gray")
-    plt.xscale("log")
-    plt.yscale("log")
-    plt.xlabel("Number of parameters")
-    plt.ylabel("Minimum Test Loss + 1")
-    # plt.ylim(9e0, 1e1)
-    plt.xlim(1e3, 5e7)
-    plt.savefig("plots/parameters_vs_testloss_studentT.pdf", bbox_inches="tight")
+#     plt.ylabel("Minimum Test Loss + 1")
+#     # plt.ylim(9e0, 1e1)
+#     plt.xlim(1e3, 5e7)
+#     plt.savefig("plots/parameters_vs_testloss_studentT.pdf", bbox_inches="tight")
 
 
 if __name__ == "__main__":
-    # plot_loss_small_models()
-    # parameter_MSEtest_scaling_plot()
-    parameter_test_scaling_plot()
-    # plot_loss()
+    parameter_MSE_CRPS_scaling_plot()
+    # parameter_test_scaling_plot()
     plot_combined_losses()

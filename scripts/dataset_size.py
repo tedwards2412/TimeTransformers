@@ -8,8 +8,9 @@ import sys
 cwd = os.getcwd()
 sys.path.insert(0, cwd + "/../timetransformers")
 
-from data_handling import TimeSeriesDataset, download_data
-from utils import convert_df_to_numpy
+from data_handling import TimeSeriesDataset, download_data, convert_df_to_numpy
+
+# from utils import convert_df_to_numpy
 
 
 def train():
@@ -42,7 +43,6 @@ def train():
         "tourism_quarterly_dataset",
         "elecdemand_dataset",
         "sunspot_dataset_without_missing_values",
-        "wind_4_seconds_dataset",
     ]
 
     dfs = download_data(datasets_to_load)
