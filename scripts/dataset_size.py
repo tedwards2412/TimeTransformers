@@ -1,5 +1,15 @@
 import os
 from torch.utils.data import DataLoader
+import torch
+from torch.optim.lr_scheduler import _LRScheduler
+import torch.optim as optim
+from tqdm import tqdm
+import yaml
+import argparse
+import json
+import numpy as np
+import time
+import wandb
 
 # This is just until temporary implementation
 import os
@@ -8,54 +18,66 @@ import sys
 cwd = os.getcwd()
 sys.path.insert(0, cwd + "/../timetransformers")
 
-from data_handling import TimeSeriesDataset, download_data, convert_df_to_numpy
+from data_handling import TimeSeriesDataset, load_datasets
+from utils import GradualWarmupScheduler
+import Transformer
 
-# from utils import convert_df_to_numpy
 
+def train(config):
+    with open(config, "r") as file:
+        config = yaml.safe_load(file)
 
-def train():
-    train_split = 0.95
-    max_seq_length = 1024
-    batch_size = 512
-    test_batch_size = 4096
+    # Accessing the configuration values
+    train_split = config["train"]["train_split"]
+    max_seq_length = config["train"]["max_seq_length"]
+    batch_size = config["train"]["batch_size"]
+    test_batch_size = config["train"]["test_batch_size"]
+    test_size = config["train"]["test_size"]
+
+    # Datasets
+    datasets_to_load = config["datasets"]
+
+    device = torch.device(
+        "cuda"
+        if torch.cuda.is_available()
+        # else "mps" if torch.backends.mps.is_available() else "cpu"
+        else "cpu"
+    )
+    print(f"Using {device}")
+    if device.type == "cuda":
+        num_workers = 11
+    elif device.type == "mps" or device.type == "cpu":
+        num_workers = 6
+
+    print("Number of workers: ", num_workers)
 
     # First lets download the data and make a data loader
-    print("Downloading data...")
-
-    datasets_to_load = [
-        "electricity_hourly_dataset",
-        "traffic_hourly_dataset",
-        "traffic_weekly_dataset",
-        "solar_4_seconds_dataset",
-        "solar_weekly_dataset",
-        "solar_10_minutes_dataset",
-        "wind_4_seconds_dataset",
-        "oikolab_weather_dataset",
-        "nn5_weekly_dataset",
-        "nn5_daily_dataset_without_missing_values",
-        "cif_2016_dataset",
-        "fred_md_dataset",
-        "hospital_dataset",
-        "m4_hourly_dataset",
-        "electricity_weekly_dataset",
-        "australian_electricity_demand_dataset",
-        "tourism_monthly_dataset",
-        "tourism_quarterly_dataset",
-        "elecdemand_dataset",
-        "sunspot_dataset_without_missing_values",
-    ]
-
-    dfs = download_data(datasets_to_load)
-
-    training_data_list, test_data_list, train_masks, test_masks = convert_df_to_numpy(
-        dfs, train_split
-    )
+    print("Loading data...")
+    (
+        training_data_list,
+        test_data_list,
+        train_masks,
+        test_masks,
+    ) = load_datasets(datasets_to_load, train_split)
 
     train_dataset = TimeSeriesDataset(training_data_list, max_seq_length, train_masks)
-    train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+    train_dataloader = DataLoader(
+        train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers
+    )
 
-    test_dataset = TimeSeriesDataset(test_data_list, max_seq_length, test_masks)
-    test_dataloader = DataLoader(test_dataset, batch_size=test_batch_size, shuffle=True)
+    test_dataset = TimeSeriesDataset(
+        test_data_list,
+        max_seq_length,
+        test_masks,
+        test=True,
+        test_size=test_size,
+    )
+    test_dataloader = DataLoader(
+        test_dataset,
+        batch_size=test_batch_size,
+        shuffle=True,
+        num_workers=num_workers,
+    )
 
     print("Training dataset size: ", train_dataset.__len__())
     print("Test dataset size: ", test_dataset.__len__())
@@ -63,11 +85,17 @@ def train():
     print("Total number of training tokens:", train_dataset.total_length())
     print("Total number of test tokens:", test_dataset.total_length())
 
-    print("testing here:", len(test_dataloader), test_dataloader.__len__())
-    print("train here:", len(train_dataloader), train_dataloader.__len__())
+    print("Train batches: ", len(train_dataloader))
+    print("Test batches: ", len(test_dataloader))
 
     return None
 
 
 if __name__ == "__main__":
-    train()
+    parser = argparse.ArgumentParser(description="Training script configuration.")
+    parser.add_argument(
+        "config_file", type=str, help="Path to the configuration YAML file."
+    )
+    args = parser.parse_args()
+
+    train(args.config_file)
