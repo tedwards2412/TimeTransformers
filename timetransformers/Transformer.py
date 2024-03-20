@@ -472,7 +472,7 @@ class Decoder_Transformer(nn.Module):
         # Pre-allocate tensor for generated sequence
         generated_sequence = torch.zeros(batch_size, n_sequence, 1, device=self.device)
 
-        for i in range(n_sequence):
+        for i in tqdm(range(n_sequence)):
             # Pass the current input through the model
             output = self.forward(current_input)
 
