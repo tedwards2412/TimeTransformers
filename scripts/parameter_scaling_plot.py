@@ -60,7 +60,8 @@ def rolling_average(data, window_size):
 
 def plot_combined_losses():
     # parameter_count_list = [2771, 8387, 24451, 130051, 879619, 3430403, 5013507]
-    parameter_count_list = [2771, 130051, 19857411]
+    # parameter_count_list = [2771, 24451, 3430403, 130051, 19857411]
+    parameter_count_list = [2771, 24451, 3430403, 19857411]
     fig, axes = plt.subplots(1, 3, figsize=(30, 6))
 
     for i, parameter_count in enumerate(parameter_count_list):
@@ -97,7 +98,7 @@ def plot_combined_losses():
             ls=ls_list[i],
             label=f"{parameter_count} parameters",
         )
-        axes[2].legend()
+        axes[2].legend(ncol=2, loc="upper right")
         axes[2].set_xlabel("Epoch")
         axes[2].set_ylabel("CRPS Test Loss")
 
@@ -109,7 +110,9 @@ def parameter_MSE_CRPS_scaling_plot():
     min_CRPS_test_loss = []
     min_test_loss = []
     # parameter_count_list = [2771, 8387, 24451, 130051, 879619, 3430403, 5013507]
-    parameter_count_list = [2771, 130051, 19857411]
+    # parameter_count_list = [2771, 24451, 3430403, 130051, 19857411]
+    parameter_count_list = [2771, 24451, 3430403, 19857411]
+    # parameter_count_list = [2771, 24451, 130051, 3430403, 19857411]
     # 130051, 24451, 2771, 5013507, 8387, 879619
 
     for parameter_count in parameter_count_list:
