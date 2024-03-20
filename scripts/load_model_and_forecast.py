@@ -116,7 +116,7 @@ def load_and_forecast(json_name, NN_path):
 
 
 if __name__ == "__main__":
-    json_name = "results/parameterscaling_19857411_studentT_training.json"
-    NN_path = "results/parameterscaling_19857411_studentT_best.pt"
+    json_name = "results/parameterscaling_3430403_studentT_training.json"
+    NN_path = "results/parameterscaling_3430403_studentT_best.pt"
 
     load_and_forecast(json_name, NN_path)
