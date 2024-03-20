@@ -4,6 +4,7 @@ import math
 import torch.utils.checkpoint
 from torch.distributions.studentT import StudentT
 import torch.nn.functional as F
+from tqdm import tqdm
 
 
 class MultiHeadAttention(nn.Module):
@@ -416,27 +417,39 @@ class Decoder_Transformer(nn.Module):
 
         return loss.mean()
 
-    def generate(self, src, n_sequence):
+    def generate(
+        self, src, n_sequence, epsilon=torch.tensor(1e-6, dtype=torch.float32)
+    ):
         # Generate the next n_sequence elements
         generated_sequence = []
+        epsilon = epsilon.to(self.device)
 
         # Initial input for the model
         current_input = src
 
-        for _ in range(n_sequence):
+        for i in tqdm(range(n_sequence)):
             # Pass the current input through the model
             output = self.forward(current_input)
 
+            # # Get the last output (most recent forecast)
+            # next_output = torch.normal(
+            #     mean=output[:, -1, 0].unsqueeze(1),
+            #     std=torch.sqrt(
+            #         F.softplus(output[:, -1, 1]).unsqueeze(1) + 1e-6,
+            #     ),
+            # )
+
             # Get the last output (most recent forecast)
-            next_output = torch.normal(
-                mean=output[:, -1, 0].unsqueeze(1),
-                std=torch.sqrt(
-                    F.softplus(output[:, -1, 1]).unsqueeze(1) + 1e-6,
-                ),
-            )
+            mean = output[:, -1, 0]
+            scale = F.softplus(output[:, -1, 1]) + epsilon
+            dof = F.softplus(output[:, -1, 2]) + epsilon + 2
+
+            student_t_dist = StudentT(dof, mean, scale)
+            next_output = student_t_dist.rsample().unsqueeze(-1)
+            # print(next_output.shape)
 
             # Append the predicted value to the generated sequence
-            generated_sequence.append(next_output[:, 0])  # Assuming output_size is 1
+            generated_sequence.append(next_output)  # Assuming output_size is 1
 
             # Concatenate the new output to the current input for the next iteration
             current_input = torch.cat(
