@@ -87,7 +87,7 @@ def load_and_forecast(json_name, NN_path):
     data_to_forecast = (
         torch.tensor([data_list[index][:max_seq_length]]).unsqueeze(-1).to(device)
     )
-    data_to_forecast = torch.cat([data_to_forecast for _ in range(256)], dim=0)
+    data_to_forecast = torch.cat([data_to_forecast for _ in range(128)], dim=0)
     forecast = transformer.generate(data_to_forecast, n_sequence)
     std = np.std(forecast[:, :].detach().cpu().numpy(), axis=0)[:, 0]
     median = np.median(forecast[:, :].detach().cpu().numpy(), axis=0)[:, 0]
