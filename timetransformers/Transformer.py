@@ -417,27 +417,64 @@ class Decoder_Transformer(nn.Module):
 
         return loss.mean()
 
+    # def generate(
+    #     self, src, n_sequence, epsilon=torch.tensor(1e-6, dtype=torch.float32)
+    # ):
+    #     # Generate the next n_sequence elements
+    #     generated_sequence = []
+    #     epsilon = epsilon.to(self.device)
+
+    #     # Initial input for the model
+    #     current_input = src
+
+    #     for _ in tqdm(range(n_sequence)):
+    #         # Pass the current input through the model
+    #         output = self.forward(current_input)
+
+    #         # Get the last output (most recent forecast)
+    #         mean = output[:, -1, 0]
+    #         scale = F.softplus(output[:, -1, 1]) + epsilon
+    #         dof = F.softplus(output[:, -1, 2]) + epsilon + 2
+
+    #         student_t_dist = StudentT(dof, mean, scale)
+    #         next_output = student_t_dist.rsample().unsqueeze(-1)
+
+    #         # Append the predicted value to the generated sequence
+    #         generated_sequence.append(next_output)  # Assuming output_size is 1
+
+    #         # Concatenate the new output to the current input for the next iteration
+    #         current_input = torch.cat(
+    #             (
+    #                 current_input[:, -self.max_seq_length + 1 :, :],
+    #                 next_output.unsqueeze(-1),
+    #             ),
+    #             dim=1,
+    #         )
+
+    #     # Convert the list of tensors to a single tensor
+    #     sequence = torch.stack(
+    #         generated_sequence, dim=1
+    #     )  # Shape: [batch_size, n_sequence]
+
+    #     return sequence
+
     def generate(
         self, src, n_sequence, epsilon=torch.tensor(1e-6, dtype=torch.float32)
     ):
-        # Generate the next n_sequence elements
-        generated_sequence = []
         epsilon = epsilon.to(self.device)
 
         # Initial input for the model
         current_input = src
+        batch_size, _, feature_size = (
+            src.shape
+        )  # Assuming src shape is [batch_size, seq_length, feature_size]
 
-        for i in tqdm(range(n_sequence)):
+        # Pre-allocate tensor for generated sequence
+        generated_sequence = torch.zeros(batch_size, n_sequence, 1, device=self.device)
+
+        for i in range(n_sequence):
             # Pass the current input through the model
             output = self.forward(current_input)
-
-            # # Get the last output (most recent forecast)
-            # next_output = torch.normal(
-            #     mean=output[:, -1, 0].unsqueeze(1),
-            #     std=torch.sqrt(
-            #         F.softplus(output[:, -1, 1]).unsqueeze(1) + 1e-6,
-            #     ),
-            # )
 
             # Get the last output (most recent forecast)
             mean = output[:, -1, 0]
@@ -446,26 +483,23 @@ class Decoder_Transformer(nn.Module):
 
             student_t_dist = StudentT(dof, mean, scale)
             next_output = student_t_dist.rsample().unsqueeze(-1)
-            # print(next_output.shape)
 
-            # Append the predicted value to the generated sequence
-            generated_sequence.append(next_output)  # Assuming output_size is 1
+            # Fill in the generated sequence tensor
+            generated_sequence[:, i, :] = (
+                next_output.detach()
+            )  # Detach the tensor to avoid retaining the graph
 
-            # Concatenate the new output to the current input for the next iteration
+            # Update current_input for the next iteration
+            # To avoid accumulating history, we'll use a rolling window approach
             current_input = torch.cat(
                 (
-                    current_input[:, -self.max_seq_length + 1 :, :],
-                    next_output.unsqueeze(-1),
+                    current_input[:, 1:, :],  # Drop the oldest frame
+                    next_output.unsqueeze(-1),  # Add the new output at the end
                 ),
                 dim=1,
-            )
+            ).detach()  # Ensure we detach to avoid building up a computation graph
 
-        # Convert the list of tensors to a single tensor
-        sequence = torch.stack(
-            generated_sequence, dim=1
-        )  # Shape: [batch_size, n_sequence]
-
-        return sequence
+        return generated_sequence
 
 
 class MLP(nn.Module):
