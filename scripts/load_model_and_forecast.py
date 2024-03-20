@@ -77,12 +77,6 @@ def load_and_forecast(json_name, NN_path):
             masks.append(mask)
 
     n_sequence = 109
-    # n_sequence = 10
-    # data_to_forecast = (
-    #     torch.tensor([data_list[0][:max_seq_length], data_list[1][:max_seq_length]])
-    #     .unsqueeze(-1)
-    #     .to(device)
-    # )
     index = 8
     data_to_forecast = (
         torch.tensor([data_list[index][:max_seq_length]]).unsqueeze(-1).to(device)
@@ -116,7 +110,7 @@ def load_and_forecast(json_name, NN_path):
 
 
 if __name__ == "__main__":
-    json_name = "results/parameterscaling_879619_studentT_training.json"
-    NN_path = "results/parameterscaling_879619_studentT_best.pt"
+    json_name = "results/parameterscaling_130051_studentT_training.json"
+    NN_path = "results/parameterscaling_130051_studentT_best.pt"
 
     load_and_forecast(json_name, NN_path)
