@@ -15,4 +15,4 @@ conda activate time
 
 cd /cfs/home/thed7424/TimeTransformers/scripts
 
-python parameter_scaling_training.py configs/parameter_scaling/nparams480k_AR32.yml
+python aspectratio_training.py configs/aspectratio_scaling/nparams480k_AR32.yml
