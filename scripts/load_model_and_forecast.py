@@ -83,7 +83,7 @@ def load_and_forecast(json_name, NN_path):
     #     .unsqueeze(-1)
     #     .to(device)
     # )
-    index = 4
+    index = 8
     data_to_forecast = (
         torch.tensor([data_list[index][:max_seq_length]]).unsqueeze(-1).to(device)
     )
