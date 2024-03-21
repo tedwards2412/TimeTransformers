@@ -115,7 +115,8 @@ def load_and_forecast(json_name, NN_path):
 
     forecast_xdim = np.arange(256, 256 + n_sequence)
 
-    plt.plot(data_list[index][0:365], color="k", ls="-")
+    plt.plot(data_to_forecast[0, :365], color="k", ls="-")
+    plt.plot(data_to_forecast[1, :365], color="k", ls="--")
     plt.plot(
         forecast_xdim,
         median,
