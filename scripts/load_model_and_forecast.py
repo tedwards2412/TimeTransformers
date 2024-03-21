@@ -118,16 +118,28 @@ def load_and_forecast(json_name, NN_path):
     print("evaluating model")
 
     index = 0
+    x_train = np.arange(max_seq_length)
+    x_true = np.arange(1, max_seq_length + 1)
     plt.figure(figsize=(10, 5))
     plt.plot(
-        batched_data_true[index, :].detach().cpu(), zorder=20, color="k", label="True"
+        x_true,
+        batched_data_true[index, :].detach().cpu(),
+        zorder=20,
+        color="k",
+        label="True",
+    )
+    plt.plot(
+        x_train,
+        batched_data[index, :].detach().cpu(),
+        zorder=20,
+        color="r",
+        ls="--",
+        label="Input data",
     )
     mean = output[index, :, 0].detach().cpu()
     std = torch.sqrt(torch.nn.functional.softplus(output[index, :, 1].detach().cpu()))
-    plt.plot(mean, color="r", label="Best model")
-    plt.fill_between(
-        np.arange(mean.shape[0]), mean - std, mean + std, alpha=0.5, color="r"
-    )
+    plt.plot(x_true, mean, color="r", label="Best model")
+    plt.fill_between(x_true, mean - std, mean + std, alpha=0.5, color="r")
     plt.legend()
     plt.savefig(f"plots/insequence_forecast_{num_params}.pdf", bbox_inches="tight")
     # quit()
