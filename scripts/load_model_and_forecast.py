@@ -125,8 +125,8 @@ def load_and_forecast(json_name, NN_path):
         np.arange(mean.shape[0]), mean - std, mean + std, alpha=0.5, color="r"
     )
 
-    transformer.load_state_dict(torch.load(NN_path, map_location=torch.device("cpu")))
-    transformer.eval()
+    # transformer.load_state_dict(torch.load(NN_path, map_location=torch.device("cpu")))
+    # transformer.eval()
 
     output = transformer(y_train)
     mean = output[index, :, 0].detach().cpu()
