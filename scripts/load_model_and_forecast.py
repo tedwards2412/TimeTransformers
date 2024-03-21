@@ -182,9 +182,9 @@ def load_and_forecast(json_name, NN_path):
 
     n_sequence = 109
     index = 0
-    data_arr = np.array(batched_data[index])
+    data_arr = batched_data[index]
     data_to_forecast = torch.tensor(
-        [data_arr[:max_seq_length]], dtype=torch.float32
+        data_arr[:max_seq_length].unsqueeze(0), dtype=torch.float32
     ).to(device)
     data_to_forecast = torch.cat([data_to_forecast for _ in range(256)], dim=0)
     print(data_to_forecast)
