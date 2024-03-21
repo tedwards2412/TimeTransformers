@@ -159,35 +159,33 @@ def load_and_forecast(json_name, NN_path):
     #         masks.append(mask)
     ####################################
 
-    data_path = "../../TIME_opensource/final"
-    path = data_path + "/weather/NOAA/NOAA_weather.npz"
-    weather_data = np.load(path)
+    # data_path = "../../TIME_opensource/final"
+    # path = data_path + "/weather/NOAA/NOAA_weather.npz"
+    # weather_data = np.load(path)
 
-    data_list = []
-    masks = []
+    # data_list = []
+    # masks = []
 
-    for data_name in tqdm(weather_data.files):
-        data = weather_data[data_name]
+    # for data_name in tqdm(weather_data.files):
+    #     data = weather_data[data_name]
 
-        for i in range(5):
-            current_ts = data[i]
-            new_data_length = current_ts.shape[0]
-            mask = np.ones(new_data_length)
+    #     for i in range(5):
+    #         current_ts = data[i]
+    #         new_data_length = current_ts.shape[0]
+    #         mask = np.ones(new_data_length)
 
-            # Need to append test and train masks
-            data_list.append(
-                normalize_data(current_ts, current_ts.mean(), current_ts.std())
-            )
-            masks.append(mask)
+    #         # Need to append test and train masks
+    #         data_list.append(
+    #             normalize_data(current_ts, current_ts.mean(), current_ts.std())
+    #         )
+    #         masks.append(mask)
 
     n_sequence = 109
     index = 0
-    data_arr = np.array(data_list[index])
-    data_to_forecast = (
-        torch.tensor([data_arr[:max_seq_length]], dtype=torch.float32)
-        .unsqueeze(-1)
-        .to(device)
-    )
+    data_arr = np.array(batched_data[index])
+    data_to_forecast = torch.tensor(
+        [data_arr[:max_seq_length]], dtype=torch.float32
+    ).to(device)
     data_to_forecast = torch.cat([data_to_forecast for _ in range(256)], dim=0)
     print(data_to_forecast)
     print(data_arr.shape, data_to_forecast.shape)
