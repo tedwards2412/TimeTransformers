@@ -118,6 +118,7 @@ def load_and_forecast(json_name, NN_path):
     print("evaluating model")
 
     index = 0
+    plt.figure(figsize=(10, 5))
     plt.plot(
         batched_data_true[index, :].detach().cpu(), zorder=20, color="k", label="True"
     )
@@ -188,6 +189,7 @@ def load_and_forecast(json_name, NN_path):
         .to(device)
     )
     data_to_forecast = torch.cat([data_to_forecast for _ in range(256)], dim=0)
+    print(data_to_forecast)
     print(data_arr.shape, data_to_forecast.shape)
 
     forecast = transformer.generate(data_to_forecast, n_sequence)
@@ -195,6 +197,7 @@ def load_and_forecast(json_name, NN_path):
     median = np.median(forecast[:, :].detach().cpu().numpy(), axis=0)[:, 0]
     forecast_xdim = np.arange(256, 256 + n_sequence)
 
+    plt.figure(figsize=(10, 5))
     plt.plot(data_arr, color="k", ls="-")
     # for i in range(1, 256):
     #     plt.plot(
@@ -218,7 +221,7 @@ def load_and_forecast(json_name, NN_path):
         color="k",
         alpha=0.3,
     )
-    plt.savefig("plots/forecast_{num_params}.pdf", bbox_inches="tight")
+    plt.savefig(f"plots/forecast_{num_params}.pdf", bbox_inches="tight")
     # plt.show()
 
     return None
