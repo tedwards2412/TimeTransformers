@@ -116,21 +116,28 @@ def load_and_forecast(json_name, NN_path):
     forecast_xdim = np.arange(256, 256 + n_sequence)
 
     plt.plot(data_to_forecast[0, :365].detach().cpu(), color="k", ls="-")
-    plt.plot(data_to_forecast[1, :365].detach().cpu(), color="b", ls="--")
-    plt.plot(
-        forecast_xdim,
-        median,
-        color="k",
-        ls="-",
-        alpha=0.3,
-    )
-    plt.fill_between(
-        forecast_xdim,
-        median - std,
-        median + std,
-        color="k",
-        alpha=0.3,
-    )
+    for i in range(1, 256):
+        plt.plot(
+            forecast_xdim,
+            data_to_forecast[i].detach().cpu(),
+            color="k",
+            ls="-",
+            alpha=0.2,
+        )
+    # plt.plot(
+    #     forecast_xdim,
+    #     median,
+    #     color="k",
+    #     ls="-",
+    #     alpha=0.3,
+    # )
+    # plt.fill_between(
+    #     forecast_xdim,
+    #     median - std,
+    #     median + std,
+    #     color="k",
+    #     alpha=0.3,
+    # )
     plt.savefig("plots/forecast.pdf", bbox_inches="tight")
     plt.show()
 
