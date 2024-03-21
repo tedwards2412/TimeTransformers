@@ -196,7 +196,7 @@ def load_and_forecast(json_name, NN_path):
     forecast_xdim = np.arange(256, 256 + n_sequence)
 
     plt.figure(figsize=(10, 5))
-    plt.plot(data_arr, color="k", ls="-")
+    plt.plot(data_arr.detach().cpu(), color="k", ls="-")
     # for i in range(1, 256):
     #     plt.plot(
     #         forecast_xdim,
