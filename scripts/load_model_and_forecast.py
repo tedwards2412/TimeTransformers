@@ -130,30 +130,33 @@ def load_and_forecast(json_name, NN_path):
     print("Training dataset size: ", train_dataset.__len__())
     print("Total number of training tokens:", train_dataset.total_length())
 
-    test = 0
-    end_test = 5
-    total_MSE_test_loss = 0
-    total_test_samples = 0
     for batch in train_dataloader:
         train, true, mask = batch
-        current_batch_size = train.shape[0]
-        batched_data = train.to(device)
-        batched_data_true = true.to(device)
-        output = transformer(batched_data)
-        test_loss_MSE = transformer.MSE(output, batched_data_true, mask=mask.to(device))
-        total_MSE_test_loss += test_loss_MSE.item() * current_batch_size
-        test += 1
-        total_test_samples += current_batch_size
-        if test == end_test:
-            break
 
-    average_MSE_test_loss = total_MSE_test_loss / total_test_samples
-    # plt.plot(train[0, :, 0].detach().cpu())
-    # plt.plot(true[0, :].detach().cpu())
-    # plt.show()
+    # test = 0
+    # end_test = 5
+    # total_MSE_test_loss = 0
+    # total_test_samples = 0
+    # for batch in train_dataloader:
+    #     train, true, mask = batch
+    #     current_batch_size = train.shape[0]
+    #     batched_data = train.to(device)
+    #     batched_data_true = true.to(device)
+    #     output = transformer(batched_data)
+    #     test_loss_MSE = transformer.MSE(output, batched_data_true, mask=mask.to(device))
+    #     total_MSE_test_loss += test_loss_MSE.item() * current_batch_size
+    #     test += 1
+    #     total_test_samples += current_batch_size
+    #     if test == end_test:
+    #         break
+
+    # average_MSE_test_loss = total_MSE_test_loss / total_test_samples
+    # # plt.plot(train[0, :, 0].detach().cpu())
+    # # plt.plot(true[0, :].detach().cpu())
+    # # plt.show()
+    # # quit()
+    # print("Test loss: ", average_MSE_test_loss)
     # quit()
-    print("Test loss: ", average_MSE_test_loss)
-    quit()
 
     #####################################
 
@@ -162,36 +165,34 @@ def load_and_forecast(json_name, NN_path):
     # plt.show()
     # quit()
 
-    index = 0
-    y_train = (
-        torch.tensor(data_list[index][:max_seq_length], dtype=torch.float32)
-        .unsqueeze(0)
-        .unsqueeze(-1)
-        .to(device)
-    )
-    y_true = (
-        torch.tensor(data_list[index][1 : max_seq_length + 1]).unsqueeze(-1).to(device)
-    )
+    # index = 0
+    # y_train = (
+    #     torch.tensor(data_list[index][:max_seq_length], dtype=torch.float32)
+    #     .unsqueeze(0)
+    #     .unsqueeze(-1)
+    #     .to(device)
+    # )
+    # y_true = (
+    #     torch.tensor(data_list[index][1 : max_seq_length + 1]).unsqueeze(-1).to(device)
+    # )
 
-    output = transformer(y_train)
-    plt.plot(y_true[:].detach().cpu(), zorder=20, color="k", label="True")
+    batched_data = train.to(device)
+    batched_data_true = true.to(device)
+    output = transformer(batched_data)
+
+    index = 0
+    plt.plot(
+        batched_data_true[index, :].detach().cpu(), zorder=20, color="k", label="True"
+    )
     mean = output[index, :, 0].detach().cpu()
     std = torch.sqrt(torch.nn.functional.softplus(output[index, :, 1].detach().cpu()))
     plt.plot(mean, color="r", label="Before training")
     plt.fill_between(
         np.arange(mean.shape[0]), mean - std, mean + std, alpha=0.5, color="r"
     )
-
-    output = transformer(y_train)
-    mean = output[index, :, 0].detach().cpu()
-    std = torch.sqrt(torch.nn.functional.softplus(output[index, :, 1].detach().cpu()))
-    plt.plot(mean, color="b", label="After training")
-    plt.fill_between(
-        np.arange(mean.shape[0]), mean - std, mean + std, alpha=0.5, color="b"
-    )
-
     plt.legend()
     plt.savefig(f"plots/insequence_forecast_{num_params}.pdf", bbox_inches="tight")
+    quit()
     # plt.show()
 
     n_sequence = 109
@@ -247,9 +248,10 @@ def load_and_forecast(json_name, NN_path):
 
 
 if __name__ == "__main__":
-    # json_name = "results/parameterscaling_19857411_studentT_training.json"
-    # NN_path = "results/parameterscaling_19857411_studentT_best.pt"
-    json_name = "results/parameterscaling_24451_studentT_training.json"
-    NN_path = "results/parameterscaling_24451_studentT_best.pt"
+    json_name = "results/parameterscaling_19857411_studentT_training.json"
+    NN_path = "results/parameterscaling_21433347_studentT_best.pt"
+    # parameterscaling_21433347_studentT_best.pt
+    # json_name = "results/parameterscaling_24451_studentT_training.json"
+    # NN_path = "results/parameterscaling_24451_studentT_best.pt"
 
     load_and_forecast(json_name, NN_path)
