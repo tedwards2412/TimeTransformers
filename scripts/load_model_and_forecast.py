@@ -52,7 +52,7 @@ def load_and_forecast(json_name, NN_path):
     print("Aspect ratio: ", d_model / num_layers)
 
     # Load the model
-    transformer.load_state_dict(torch.load(NN_path, map_location=torch.device("cpu")))
+    transformer.load_state_dict(torch.load(NN_path))
     transformer.eval()
 
     data_path = "../../TIME_opensource/final"
