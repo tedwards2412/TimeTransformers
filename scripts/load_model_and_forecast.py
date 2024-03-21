@@ -52,7 +52,7 @@ def load_and_forecast(json_name, NN_path):
     print("Number of parameters: ", num_params)
     print("Aspect ratio: ", d_model / num_layers)
 
-    model_state = torch.load(NN_path)
+    model_state = torch.load(NN_path, map_location=device)
     transformer.load_state_dict(model_state, strict=True)
     # transformer.load_state_dict(torch.load(NN_path, map_location=torch.device("cpu")))
     transformer.to(device)
@@ -130,19 +130,29 @@ def load_and_forecast(json_name, NN_path):
     print("Training dataset size: ", train_dataset.__len__())
     print("Total number of training tokens:", train_dataset.total_length())
 
+    test = 0
+    end_test = 5
+    total_MSE_test_loss = 0
+    total_test_samples = 0
     for batch in train_dataloader:
         train, true, mask = batch
-        break
+        current_batch_size = train.shape[0]
+        batched_data = train.to(device)
+        batched_data_true = true.to(device)
+        output = transformer(batched_data)
+        test_loss_MSE = transformer.MSE(output, batched_data_true, mask=mask.to(device))
+        total_MSE_test_loss += test_loss_MSE.item() * current_batch_size
+        test += 1
+        total_test_samples += current_batch_size
+        if test == end_test:
+            break
 
+    average_MSE_test_loss = total_MSE_test_loss / total_test_samples
     # plt.plot(train[0, :, 0].detach().cpu())
     # plt.plot(true[0, :].detach().cpu())
     # plt.show()
     # quit()
-    batched_data = train.to(device)
-    batched_data_true = true.to(device)
-    output = transformer(batched_data)
-    test_loss_MSE = transformer.MSE(output, batched_data_true, mask=mask.to(device))
-    print("Test loss: ", test_loss_MSE.item())
+    print("Test loss: ", average_MSE_test_loss)
     quit()
 
     #####################################

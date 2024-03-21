@@ -310,7 +310,7 @@ def train(config):
     print(f"Saving final model weights to {model_file_name}")
     torch.save(
         transformer.state_dict(),
-        f"{model_file_name}.pt",
+        f"{model_file_name}",
     )
 
     # Writing data to a JSON file

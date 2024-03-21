@@ -225,15 +225,18 @@ class Decoder_Transformer(nn.Module):
                 for _ in range(num_layers)
             ]
         )
-        self.distribution_head = MultiLayerDistributionHead(
-            d_model, num_distribution_layers, dropout, output_size
+        # self.distribution_head = MultiLayerDistributionHead(
+        #     d_model, num_distribution_layers, dropout, output_size
+        # )
+        self.distribution_heads = nn.ModuleList(
+            [
+                MultiLayerDistributionHead(
+                    d_model, num_distribution_layers, dropout, 1
+                ).to(device)
+                for _ in range(output_size)
+            ]
         )
-        self.distribution_heads = [
-            MultiLayerDistributionHead(d_model, num_distribution_layers, dropout, 1).to(
-                device
-            )
-            for _ in range(output_size)
-        ]
+
         self.dropout = nn.Dropout(dropout).to(device)
 
     def generate_mask(self, src, custom_mask=None):
