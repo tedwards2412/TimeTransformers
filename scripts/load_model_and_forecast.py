@@ -119,7 +119,7 @@ def load_and_forecast(json_name, NN_path):
     for i in range(1, 256):
         plt.plot(
             forecast_xdim,
-            data_to_forecast[i].detach().cpu(),
+            forecast[i].detach().cpu(),
             color="k",
             ls="-",
             alpha=0.2,
