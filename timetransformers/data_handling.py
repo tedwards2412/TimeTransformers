@@ -28,8 +28,6 @@ class TimeSeriesDataset(Dataset):
         self, data, max_sequence_length, miss_vals_mask, test=False, test_size=0.2
     ):
         self.max_sequence_length = max_sequence_length
-        # self.means = np.array([np.mean(data[i]) for i in range(len(data))])
-        # self.std = np.array([np.std(data[i]) for i in range(len(data))])
         self.means = np.array(
             [np.mean(data[i]) for i in tqdm(range(len(data)), desc="Calculating means")]
         )
@@ -38,14 +36,6 @@ class TimeSeriesDataset(Dataset):
         )
         self.miss_vals_mask = miss_vals_mask
 
-        # self.data = [
-        #     normalize_data(data[i], self.means[i], self.std[i])
-        #     for i in range(len(data))
-        # ]
-        # self.probs = (
-        #     np.array([len(self.data[i]) for i in range(len(self.data))])
-        #     / self.total_length()
-        # )
         self.data = [
             normalize_data(data[i], self.means[i], self.std[i])
             for i in tqdm(range(len(data)), desc="Normalizing Data")
