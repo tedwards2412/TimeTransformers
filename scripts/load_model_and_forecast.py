@@ -84,51 +84,51 @@ def load_and_forecast(json_name, NN_path):
     # print("Test loss: ", average_MSE_test_loss)
     # quit()
 
-    # batch_size = config["train"]["batch_size"]
-    # datasets_to_load = config["datasets"]
-    # train_split = config["train"]["train_split"]
-    # datasets_to_load["monash"] = ["electricity_hourly_dataset"]
-    # datasets_to_load["finance"] = []
-    # datasets_to_load["energy"] = []
-    # datasets_to_load["science"] = []
-    # datasets_to_load["audio"] = []
-    # datasets_to_load["traffic"] = []
-    # datasets_to_load["traffic"] = ["NOAA_dataset"]
+    batch_size = config["train"]["batch_size"]
+    datasets_to_load = config["datasets"]
+    train_split = config["train"]["train_split"]
+    datasets_to_load["monash"] = ["electricity_hourly_dataset"]
+    datasets_to_load["finance"] = []
+    datasets_to_load["energy"] = []
+    datasets_to_load["science"] = []
+    datasets_to_load["audio"] = []
+    datasets_to_load["traffic"] = []
+    datasets_to_load["traffic"] = ["NOAA_dataset"]
 
-    # print("Loading data...")
-    # (
-    #     training_data_list,
-    #     test_data_list,
-    #     train_masks,
-    #     test_masks,
-    # ) = load_datasets(datasets_to_load, train_split)
+    print("Loading data...")
+    (
+        training_data_list,
+        test_data_list,
+        train_masks,
+        test_masks,
+    ) = load_datasets(datasets_to_load, train_split)
 
-    # train_dataset = TimeSeriesDataset(training_data_list, max_seq_length, train_masks)
-    # train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-    # print("Training dataset size: ", train_dataset.__len__())
-    # print("Total number of training tokens:", train_dataset.total_length())
+    train_dataset = TimeSeriesDataset(training_data_list, max_seq_length, train_masks)
+    train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+    print("Training dataset size: ", train_dataset.__len__())
+    print("Total number of training tokens:", train_dataset.total_length())
 
-    # for batch in train_dataloader:
-    #     train, true, mask = batch
-    #     break
+    for batch in train_dataloader:
+        train, true, mask = batch
+        break
 
-    # batched_data = train.to(device)
-    # batched_data_true = true.to(device)
-    # output = transformer(batched_data)
-    # print("evaluating model")
+    batched_data = train.to(device)
+    batched_data_true = true.to(device)
+    output = transformer(batched_data)
+    print("evaluating model")
 
-    # index = 0
-    # plt.plot(
-    #     batched_data_true[index, :].detach().cpu(), zorder=20, color="k", label="True"
-    # )
-    # mean = output[index, :, 0].detach().cpu()
-    # std = torch.sqrt(torch.nn.functional.softplus(output[index, :, 1].detach().cpu()))
-    # plt.plot(mean, color="r", label="Best model")
-    # plt.fill_between(
-    #     np.arange(mean.shape[0]), mean - std, mean + std, alpha=0.5, color="r"
-    # )
-    # plt.legend()
-    # plt.savefig(f"plots/insequence_forecast_{num_params}.pdf", bbox_inches="tight")
+    index = 0
+    plt.plot(
+        batched_data_true[index, :].detach().cpu(), zorder=20, color="k", label="True"
+    )
+    mean = output[index, :, 0].detach().cpu()
+    std = torch.sqrt(torch.nn.functional.softplus(output[index, :, 1].detach().cpu()))
+    plt.plot(mean, color="r", label="Best model")
+    plt.fill_between(
+        np.arange(mean.shape[0]), mean - std, mean + std, alpha=0.5, color="r"
+    )
+    plt.legend()
+    plt.savefig(f"plots/insequence_forecast_{num_params}.pdf", bbox_inches="tight")
     # quit()
     # plt.show()
 
@@ -196,14 +196,14 @@ def load_and_forecast(json_name, NN_path):
     forecast_xdim = np.arange(256, 256 + n_sequence)
 
     plt.plot(data_arr, color="k", ls="-")
-    for i in range(1, 256):
-        plt.plot(
-            forecast_xdim,
-            forecast[i].detach().cpu(),
-            color="k",
-            ls="-",
-            alpha=0.2,
-        )
+    # for i in range(1, 256):
+    #     plt.plot(
+    #         forecast_xdim,
+    #         forecast[i].detach().cpu(),
+    #         color="k",
+    #         ls="-",
+    #         alpha=0.2,
+    #     )
     plt.plot(
         forecast_xdim,
         median,
@@ -218,7 +218,7 @@ def load_and_forecast(json_name, NN_path):
         color="k",
         alpha=0.3,
     )
-    plt.savefig("plots/forecast.pdf", bbox_inches="tight")
+    plt.savefig("plots/forecast_{num_params}.pdf", bbox_inches="tight")
     # plt.show()
 
     return None
