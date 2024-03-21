@@ -62,34 +62,11 @@ def load_and_forecast(json_name, NN_path):
     data_list = []
     masks = []
 
-    # for data_name in tqdm(weather_data.files):
-    #     data = weather_data[data_name]
+    for data_name in tqdm(weather_data.files):
+        data = weather_data[data_name]
 
-    #     for i in range(10):
-    #         current_ts = data[i]
-    #         new_data_length = current_ts.shape[0]
-    #         mask = np.ones(new_data_length)
-
-    #         # Need to append test and train masks
-    #         data_list.append(
-    #             normalize_data(current_ts, current_ts.mean(), current_ts.std())
-    #         )
-    #         masks.append(mask)
-
-    ####################################
-    import glob
-
-    data_path = "../../TIME_opensource/final"
-    energy_paths = data_path + "/energy/"
-
-    buildingbench_files = glob.glob(energy_paths + "*.npy")
-    rnd_indices = np.random.choice(len(buildingbench_files), 2, replace=False)
-
-    for rnd in tqdm(rnd_indices):
-        buildingbench_data = np.load(buildingbench_files[rnd])
-
-        for i in range(buildingbench_data.shape[0]):
-            current_ts = buildingbench_data[i]
+        for i in range(10):
+            current_ts = data[i]
             new_data_length = current_ts.shape[0]
             mask = np.ones(new_data_length)
 
@@ -98,6 +75,29 @@ def load_and_forecast(json_name, NN_path):
                 normalize_data(current_ts, current_ts.mean(), current_ts.std())
             )
             masks.append(mask)
+
+    ####################################
+    # import glob
+
+    # data_path = "../../TIME_opensource/final"
+    # energy_paths = data_path + "/energy/"
+
+    # buildingbench_files = glob.glob(energy_paths + "*.npy")
+    # rnd_indices = np.random.choice(len(buildingbench_files), 2, replace=False)
+
+    # for rnd in tqdm(rnd_indices):
+    #     buildingbench_data = np.load(buildingbench_files[rnd])
+
+    #     for i in range(buildingbench_data.shape[0]):
+    #         current_ts = buildingbench_data[i]
+    #         new_data_length = current_ts.shape[0]
+    #         mask = np.ones(new_data_length)
+
+    #         # Need to append test and train masks
+    #         data_list.append(
+    #             normalize_data(current_ts, current_ts.mean(), current_ts.std())
+    #         )
+    #         masks.append(mask)
 
     ######################################
 
@@ -138,6 +138,6 @@ def load_and_forecast(json_name, NN_path):
 
 if __name__ == "__main__":
     json_name = "results/parameterscaling_19857411_studentT_training.json"
-    NN_path = "results/parameterscaling_19857411_studentT_best.pt"
+    NN_path = "results/parameterscaling_19857411_studentT_final.pt.pt"
 
     load_and_forecast(json_name, NN_path)
