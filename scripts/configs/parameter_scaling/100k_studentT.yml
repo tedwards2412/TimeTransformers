@@ -17,7 +17,7 @@ train:
   early_stopping: 250000
   warmup_steps: 3000
   evaluation_interval: 1000
-  test_size: 0.01
+  test_size: 0.1
 
 datasets:
   monash: # Total: 503,723,130
@@ -56,6 +56,6 @@ datasets:
     # - "commands"
     # - "birds"
   energy: # 2,533,584,545
-    # - "buildingbench"
+    - "buildingbench"
   traffic: # 1,507,545,600
     # - "CA"
