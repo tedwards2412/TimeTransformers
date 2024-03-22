@@ -530,29 +530,6 @@ def add_buildingbench_dataset(
     return training_data, test_data, train_masks, test_masks
 
 
-def add_weather_dataset(
-    training_data, test_data, train_masks, test_masks, train_split, path
-):
-    weather_data = np.load(path)
-
-    for data_name in tqdm(weather_data.files):
-        data = weather_data[data_name]
-
-        for i in range(data.shape[0]):
-            current_ts = data[i]
-            new_data_length = current_ts.shape[0]
-            mask = np.ones(new_data_length)
-
-            # Need to append test and train masks
-            training_data.append(current_ts[: int(train_split * new_data_length)])
-            train_masks.append(mask[: int(train_split * new_data_length)])
-
-            test_data.append(current_ts[int(train_split * new_data_length) :])
-            test_masks.append(mask[int(train_split * new_data_length) :])
-
-    return training_data, test_data, train_masks, test_masks
-
-
 # def add_weather_dataset(
 #     training_data, test_data, train_masks, test_masks, train_split, path
 # ):
@@ -560,10 +537,6 @@ def add_weather_dataset(
 
 #     for data_name in tqdm(weather_data.files):
 #         data = weather_data[data_name]
-#         n_train_data = int(data.shape[0] * train_split)
-#         train_indices = set(
-#             np.random.choice(data.shape[0], n_train_data, replace=False)
-#         )
 
 #         for i in range(data.shape[0]):
 #             current_ts = data[i]
@@ -571,14 +544,41 @@ def add_weather_dataset(
 #             mask = np.ones(new_data_length)
 
 #             # Need to append test and train masks
-#             if i in train_indices:
-#                 training_data.append(current_ts)
-#                 train_masks.append(mask)
-#             else:
-#                 test_data.append(current_ts)
-#                 test_masks.append(mask)
+#             training_data.append(current_ts[: int(train_split * new_data_length)])
+#             train_masks.append(mask[: int(train_split * new_data_length)])
+
+#             test_data.append(current_ts[int(train_split * new_data_length) :])
+#             test_masks.append(mask[int(train_split * new_data_length) :])
 
 #     return training_data, test_data, train_masks, test_masks
+
+
+def add_weather_dataset(
+    training_data, test_data, train_masks, test_masks, train_split, path
+):
+    weather_data = np.load(path)
+
+    for data_name in tqdm(weather_data.files):
+        data = weather_data[data_name]
+        n_train_data = int(data.shape[0] * train_split)
+        train_indices = set(
+            np.random.choice(data.shape[0], n_train_data, replace=False)
+        )
+
+        for i in range(data.shape[0]):
+            current_ts = data[i]
+            new_data_length = current_ts.shape[0]
+            mask = np.ones(new_data_length)
+
+            # Need to append test and train masks
+            if i in train_indices:
+                training_data.append(current_ts)
+                train_masks.append(mask)
+            else:
+                test_data.append(current_ts)
+                test_masks.append(mask)
+
+    return training_data, test_data, train_masks, test_masks
 
 
 def add_ca_traffic_dataset(
