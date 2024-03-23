@@ -13,7 +13,7 @@ train:
   max_seq_length: 256
   batch_size: 512
   test_batch_size: 512
-  total_training_steps: 20000
+  total_training_steps: 50000
   early_stopping: 250000
   warmup_steps: 3000
   evaluation_interval: 200
