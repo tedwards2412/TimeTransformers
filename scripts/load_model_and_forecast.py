@@ -192,7 +192,7 @@ def load_and_forecast(json_name, NN_path):
             )
             masks.append(mask)
 
-    n_sequence = 100
+    n_sequence = 109
     index = 0
     data_arr = torch.tensor(data_list[index]).to(device)
     data_to_forecast = torch.tensor(
@@ -201,6 +201,7 @@ def load_and_forecast(json_name, NN_path):
     data_to_forecast = torch.cat(
         [data_to_forecast for _ in range(256)], dim=0
     ).unsqueeze(-1)
+
     # print(data_to_forecast)
     # print(data_arr.shape, data_to_forecast.shape)
     # quit()
@@ -216,6 +217,7 @@ def load_and_forecast(json_name, NN_path):
     std = np.std(forecast[:, :].detach().cpu().numpy(), axis=0)[:, 0]
     median = np.median(forecast[:, :].detach().cpu().numpy(), axis=0)[:, 0]
     forecast_xdim = np.arange(256, 256 + n_sequence)
+    print(mean.shape, std.shape, forecast_xdim.shape)
 
     plt.figure(figsize=(10, 5))
     plt.plot(data_arr.detach().cpu(), color="k", ls="-")
