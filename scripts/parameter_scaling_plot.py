@@ -61,7 +61,7 @@ def rolling_average(data, window_size):
 def plot_combined_losses():
     # parameter_count_list = [2771, 8387, 24451, 130051, 879619, 3430403, 5013507]
     # parameter_count_list = [2771, 24451, 3430403, 130051, 19857411]
-    parameter_count_list = [2771, 24451, 3430403, 19857411]
+    parameter_count_list = [155011, 3825155, 21433347]
     fig, axes = plt.subplots(1, 3, figsize=(30, 6))
 
     for i, parameter_count in enumerate(parameter_count_list):
@@ -111,7 +111,7 @@ def parameter_MSE_CRPS_scaling_plot():
     min_test_loss = []
     # parameter_count_list = [2771, 8387, 24451, 130051, 879619, 3430403, 5013507]
     # parameter_count_list = [2771, 24451, 3430403, 130051, 19857411]
-    parameter_count_list = [2771, 24451, 3430403, 19857411]
+    parameter_count_list = [155011, 3825155, 21433347]
     # parameter_count_list = [2771, 24451, 130051, 3430403, 19857411]
     # 130051, 24451, 2771, 5013507, 8387, 879619
 
@@ -150,13 +150,16 @@ def parameter_MSE_CRPS_scaling_plot():
 
     # Extracting the parameters
     a, b = params
+    print("Test Loss + 1")
     print("Normalization constant: ", a)
     print("Power law exponent: ", b)
 
+    print("MSE")
     a_MSE, b_MSE = params_MSE
     print("Normalization constant: ", a_MSE)
     print("Power law exponent: ", b_MSE)
 
+    print("CRPS")
     a_CRPS, b_CRPS = params_CRPS
     print("Normalization constant: ", a_CRPS)
     print("Power law exponent: ", b_CRPS)

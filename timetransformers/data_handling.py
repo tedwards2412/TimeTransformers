@@ -27,14 +27,20 @@ class TimeSeriesDataset(Dataset):
     def __init__(
         self, data, max_sequence_length, miss_vals_mask, test=False, test_size=0.2
     ):
+        self.miss_vals_mask = miss_vals_mask
         self.max_sequence_length = max_sequence_length
         self.means = np.array(
-            [np.mean(data[i]) for i in tqdm(range(len(data)), desc="Calculating means")]
+            [
+                np.mean(data[i][np.array(self.miss_vals_mask[i], dtype=bool)])
+                for i in tqdm(range(len(data)), desc="Calculating means")
+            ]
         )
         self.std = np.array(
-            [np.std(data[i]) for i in tqdm(range(len(data)), desc="Calculating std")]
+            [
+                np.std(data[i][np.array(self.miss_vals_mask[i], dtype=bool)])
+                for i in tqdm(range(len(data)), desc="Calculating std")
+            ]
         )
-        self.miss_vals_mask = miss_vals_mask
 
         self.data = [
             normalize_data(data[i], self.means[i], self.std[i])
@@ -460,19 +466,28 @@ def convert_df_to_numpy(dfs, train_split=0.8):
             return array_filled, mask_array
 
         N_data = selected_series_values.shape[0]
+        n_train_data = int(N_data * train_split)
+        train_indices = set(np.random.choice(N_data, n_train_data, replace=False))
 
         for i in range(N_data):
             new_data, mask = fill_nans_and_create_mask(
                 selected_series_values[i].to_numpy().astype(float)
             )
-            new_data_length = new_data.shape[0]
+            # new_data_length = new_data.shape[0]
+
+            if i in train_indices:
+                training_data.append(new_data)
+                train_masks.append(mask)
+            else:
+                test_data.append(new_data)
+                test_masks.append(mask)
 
             # Need to append test and train masks
-            training_data.append(new_data[: int(train_split * new_data_length)])
-            train_masks.append(mask[: int(train_split * new_data_length)])
+            # training_data.append(new_data[: int(train_split * new_data_length)])
+            # train_masks.append(mask[: int(train_split * new_data_length)])
 
-            test_data.append(new_data[int(train_split * new_data_length) :])
-            test_masks.append(mask[int(train_split * new_data_length) :])
+            # test_data.append(new_data[int(train_split * new_data_length) :])
+            # test_masks.append(mask[int(train_split * new_data_length) :])
 
     return training_data, test_data, train_masks, test_masks
 
@@ -587,6 +602,9 @@ def add_ca_traffic_dataset(
     traffic_data = np.load(path)
     data = traffic_data["arr_0"]
 
+    n_train_data = int(data.shape[0] * train_split)
+    train_indices = set(np.random.choice(data.shape[0], n_train_data, replace=False))
+
     for i in range(data.shape[0]):
         current_ts = data[i]
         new_data_length = current_ts.shape[0]
@@ -594,13 +612,71 @@ def add_ca_traffic_dataset(
         current_ts[~mask] = 0.0
 
         # Need to append test and train masks
-        training_data.append(current_ts[: int(train_split * new_data_length)])
-        train_masks.append(mask[: int(train_split * new_data_length)])
-
-        test_data.append(current_ts[int(train_split * new_data_length) :])
-        test_masks.append(mask[int(train_split * new_data_length) :])
+        if i in train_indices:
+            training_data.append(current_ts)
+            train_masks.append(mask)
+        else:
+            test_data.append(current_ts)
+            test_masks.append(mask)
 
     return training_data, test_data, train_masks, test_masks
+
+
+# def add_ca_traffic_dataset(
+#     training_data, test_data, train_masks, test_masks, train_split, path
+# ):
+#     traffic_data = np.load(path)
+#     data = traffic_data["arr_0"]
+
+#     for i in range(data.shape[0]):
+#         current_ts = data[i]
+#         new_data_length = current_ts.shape[0]
+#         mask = ~np.isnan(current_ts)
+#         current_ts[~mask] = 0.0
+
+#         # Need to append test and train masks
+#         training_data.append(current_ts[: int(train_split * new_data_length)])
+#         train_masks.append(mask[: int(train_split * new_data_length)])
+
+#         test_data.append(current_ts[int(train_split * new_data_length) :])
+#         test_masks.append(mask[int(train_split * new_data_length) :])
+
+#     return training_data, test_data, train_masks, test_masks
+
+
+# def add_yahoo_dataset(training_data, test_data, train_masks, test_masks, train_split):
+#     stock_returns = np.load(finance_paths["yahoo_returns"], allow_pickle=True)
+#     stock_volume = np.load(finance_paths["yahoo_volume"], allow_pickle=True)
+
+#     print("Adding stock returns...")
+#     returns = stock_returns["cleaned_stock_returns"]
+#     for i in tqdm(range(returns.shape[0])):
+#         current_ts = returns[i]
+#         new_data_length = current_ts.shape[0]
+#         mask = np.ones(new_data_length)
+
+#         # Need to append test and train masks
+#         training_data.append(current_ts[: int(train_split * new_data_length)])
+#         train_masks.append(mask[: int(train_split * new_data_length)])
+
+#         test_data.append(current_ts[int(train_split * new_data_length) :])
+#         test_masks.append(mask[int(train_split * new_data_length) :])
+
+#     print("Adding stock volume...")
+#     volume = stock_volume["cleaned_stock_volume"]
+#     for i in tqdm(range(volume.shape[0])):
+#         current_ts = np.log10(1 + volume[i])
+#         new_data_length = current_ts.shape[0]
+#         mask = np.ones(new_data_length)
+
+#         # Need to append test and train masks
+#         training_data.append(current_ts[: int(train_split * new_data_length)])
+#         train_masks.append(mask[: int(train_split * new_data_length)])
+
+#         test_data.append(current_ts[int(train_split * new_data_length) :])
+#         test_masks.append(mask[int(train_split * new_data_length) :])
+
+#     return training_data, test_data, train_masks, test_masks
 
 
 def add_yahoo_dataset(training_data, test_data, train_masks, test_masks, train_split):
@@ -609,53 +685,59 @@ def add_yahoo_dataset(training_data, test_data, train_masks, test_masks, train_s
 
     print("Adding stock returns...")
     returns = stock_returns["cleaned_stock_returns"]
+    n_train_data = int(returns.shape[0] * train_split)
+    train_indices = set(np.random.choice(returns.shape[0], n_train_data, replace=False))
     for i in tqdm(range(returns.shape[0])):
         current_ts = returns[i]
         new_data_length = current_ts.shape[0]
         mask = np.ones(new_data_length)
 
         # Need to append test and train masks
-        training_data.append(current_ts[: int(train_split * new_data_length)])
-        train_masks.append(mask[: int(train_split * new_data_length)])
-
-        test_data.append(current_ts[int(train_split * new_data_length) :])
-        test_masks.append(mask[int(train_split * new_data_length) :])
+        if i in train_indices:
+            training_data.append(current_ts)
+            train_masks.append(mask)
+        else:
+            test_data.append(current_ts)
+            test_masks.append(mask)
 
     print("Adding stock volume...")
     volume = stock_volume["cleaned_stock_volume"]
+    n_train_data = int(volume.shape[0] * train_split)
+    train_indices = set(np.random.choice(volume.shape[0], n_train_data, replace=False))
     for i in tqdm(range(volume.shape[0])):
         current_ts = np.log10(1 + volume[i])
         new_data_length = current_ts.shape[0]
         mask = np.ones(new_data_length)
 
         # Need to append test and train masks
-        training_data.append(current_ts[: int(train_split * new_data_length)])
-        train_masks.append(mask[: int(train_split * new_data_length)])
-
-        test_data.append(current_ts[int(train_split * new_data_length) :])
-        test_masks.append(mask[int(train_split * new_data_length) :])
+        if i in train_indices:
+            training_data.append(current_ts)
+            train_masks.append(mask)
+        else:
+            test_data.append(current_ts)
+            test_masks.append(mask)
 
     return training_data, test_data, train_masks, test_masks
 
 
-def add_ZTF_dataset(training_data, test_data, train_masks, test_masks, train_split):
-    light_curve_data = np.load(science_paths["ZTF"])
+# def add_ZTF_dataset(training_data, test_data, train_masks, test_masks, train_split):
+#     light_curve_data = np.load(science_paths["ZTF"])
 
-    print("Adding ZTF light curves returns...")
-    light_curves = light_curve_data["light_curves"]
-    for i in tqdm(range(light_curves.shape[0])):
-        ts_length = int(light_curves[i, -1])
-        current_ts = light_curves[i, :ts_length]
-        new_data_length = current_ts.shape[0]
-        mask = np.ones(new_data_length)
+#     print("Adding ZTF light curves returns...")
+#     light_curves = light_curve_data["light_curves"]
+#     for i in tqdm(range(light_curves.shape[0])):
+#         ts_length = int(light_curves[i, -1])
+#         current_ts = light_curves[i, :ts_length]
+#         new_data_length = current_ts.shape[0]
+#         mask = np.ones(new_data_length)
 
-        # Need to append test and train masks
-        training_data.append(current_ts[: int(train_split * new_data_length)])
-        train_masks.append(mask[: int(train_split * new_data_length)])
+#         # Need to append test and train masks
+#         training_data.append(current_ts[: int(train_split * new_data_length)])
+#         train_masks.append(mask[: int(train_split * new_data_length)])
 
-        test_data.append(current_ts[int(train_split * new_data_length) :])
-        test_masks.append(mask[int(train_split * new_data_length) :])
-    return training_data, test_data, train_masks, test_masks
+#         test_data.append(current_ts[int(train_split * new_data_length) :])
+#         test_masks.append(mask[int(train_split * new_data_length) :])
+#     return training_data, test_data, train_masks, test_masks
 
 
 def add_command_audio_dataset(
@@ -665,18 +747,45 @@ def add_command_audio_dataset(
 
     print("Adding speech command audio...")
     speech_commands = speech_commands["audio_array"].astype(np.float32)
+    n_train_data = int(speech_commands.shape[0] * train_split)
+    train_indices = set(
+        np.random.choice(speech_commands.shape[0], n_train_data, replace=False)
+    )
+
     for i in tqdm(range(speech_commands.shape[0])):
         current_ts = speech_commands[i]
         new_data_length = current_ts.shape[0]
         mask = np.ones(new_data_length)
 
         # Need to append test and train masks
-        training_data.append(current_ts[: int(train_split * new_data_length)])
-        train_masks.append(mask[: int(train_split * new_data_length)])
-
-        test_data.append(current_ts[int(train_split * new_data_length) :])
-        test_masks.append(mask[int(train_split * new_data_length) :])
+        if i in train_indices:
+            training_data.append(current_ts)
+            train_masks.append(mask)
+        else:
+            test_data.append(current_ts)
+            test_masks.append(mask)
     return training_data, test_data, train_masks, test_masks
+
+
+# def add_command_audio_dataset(
+#     training_data, test_data, train_masks, test_masks, train_split
+# ):
+#     speech_commands = np.load(audio_paths["commands"])
+
+#     print("Adding speech command audio...")
+#     speech_commands = speech_commands["audio_array"].astype(np.float32)
+#     for i in tqdm(range(speech_commands.shape[0])):
+#         current_ts = speech_commands[i]
+#         new_data_length = current_ts.shape[0]
+#         mask = np.ones(new_data_length)
+
+#         # Need to append test and train masks
+#         training_data.append(current_ts[: int(train_split * new_data_length)])
+#         train_masks.append(mask[: int(train_split * new_data_length)])
+
+#         test_data.append(current_ts[int(train_split * new_data_length) :])
+#         test_masks.append(mask[int(train_split * new_data_length) :])
+#     return training_data, test_data, train_masks, test_masks
 
 
 def add_arabic_audio_dataset(
@@ -686,6 +795,10 @@ def add_arabic_audio_dataset(
 
     print("Adding arabic audio...")
     arabic_audio = arabic_audio["downsampled_audio_padded"].astype(np.float32)
+    n_train_data = int(arabic_audio.shape[0] * train_split)
+    train_indices = set(
+        np.random.choice(arabic_audio.shape[0], n_train_data, replace=False)
+    )
     for i in tqdm(range(arabic_audio.shape[0])):
         ts_length = int(arabic_audio[i, -1])
         current_ts = arabic_audio[i, :ts_length]
@@ -693,12 +806,35 @@ def add_arabic_audio_dataset(
         mask = np.ones(new_data_length)
 
         # Need to append test and train masks
-        training_data.append(current_ts[: int(train_split * new_data_length)])
-        train_masks.append(mask[: int(train_split * new_data_length)])
-
-        test_data.append(current_ts[int(train_split * new_data_length) :])
-        test_masks.append(mask[int(train_split * new_data_length) :])
+        if i in train_indices:
+            training_data.append(current_ts)
+            train_masks.append(mask)
+        else:
+            test_data.append(current_ts)
+            test_masks.append(mask)
     return training_data, test_data, train_masks, test_masks
+
+
+# def add_arabic_audio_dataset(
+#     training_data, test_data, train_masks, test_masks, train_split
+# ):
+#     arabic_audio = np.load(audio_paths["arabic"])
+
+#     print("Adding arabic audio...")
+#     arabic_audio = arabic_audio["downsampled_audio_padded"].astype(np.float32)
+#     for i in tqdm(range(arabic_audio.shape[0])):
+#         ts_length = int(arabic_audio[i, -1])
+#         current_ts = arabic_audio[i, :ts_length]
+#         new_data_length = current_ts.shape[0]
+#         mask = np.ones(new_data_length)
+
+#         # Need to append test and train masks
+#         training_data.append(current_ts[: int(train_split * new_data_length)])
+#         train_masks.append(mask[: int(train_split * new_data_length)])
+
+#         test_data.append(current_ts[int(train_split * new_data_length) :])
+#         test_masks.append(mask[int(train_split * new_data_length) :])
+#     return training_data, test_data, train_masks, test_masks
 
 
 def add_bird_audio_dataset(
@@ -708,6 +844,11 @@ def add_bird_audio_dataset(
 
     print("Adding bird audio...")
     bird_audio = bird_audio["downsampled_audio_padded"].astype(np.float32)
+    n_train_data = int(bird_audio.shape[0] * train_split)
+    train_indices = set(
+        np.random.choice(bird_audio.shape[0], n_train_data, replace=False)
+    )
+
     for i in tqdm(range(bird_audio.shape[0])):
         ts_length = int(bird_audio[i, -1])
         current_ts = bird_audio[i, :ts_length]
@@ -715,12 +856,36 @@ def add_bird_audio_dataset(
         mask = np.ones(new_data_length)
 
         # Need to append test and train masks
-        training_data.append(current_ts[: int(train_split * new_data_length)])
-        train_masks.append(mask[: int(train_split * new_data_length)])
-
-        test_data.append(current_ts[int(train_split * new_data_length) :])
-        test_masks.append(mask[int(train_split * new_data_length) :])
+        if i in train_indices:
+            training_data.append(current_ts)
+            train_masks.append(mask)
+        else:
+            test_data.append(current_ts)
+            test_masks.append(mask)
     return training_data, test_data, train_masks, test_masks
+
+
+# def add_bird_audio_dataset(
+#     training_data, test_data, train_masks, test_masks, train_split
+# ):
+#     bird_audio = np.load(audio_paths["birds"])
+
+#     print("Adding bird audio...")
+#     bird_audio = bird_audio["downsampled_audio_padded"].astype(np.float32)
+
+#     for i in tqdm(range(bird_audio.shape[0])):
+#         ts_length = int(bird_audio[i, -1])
+#         current_ts = bird_audio[i, :ts_length]
+#         new_data_length = current_ts.shape[0]
+#         mask = np.ones(new_data_length)
+
+#         # Need to append test and train masks
+#         training_data.append(current_ts[: int(train_split * new_data_length)])
+#         train_masks.append(mask[: int(train_split * new_data_length)])
+
+#         test_data.append(current_ts[int(train_split * new_data_length) :])
+#         test_masks.append(mask[int(train_split * new_data_length) :])
+#     return training_data, test_data, train_masks, test_masks
 
 
 traffic_paths = {"CA": data_path + "/traffic/processed_ca_traffic_data.npz"}

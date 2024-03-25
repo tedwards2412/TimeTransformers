@@ -151,12 +151,20 @@ class DecoderLayer(nn.Module):
         else:
             return self.forward_step(x, src_mask)
 
+    # def forward_step(self, x, src_mask):
+    #     attn_output = self.self_attn(x, x, x, src_mask)
+    #     x = self.norm1(x + self.dropout(attn_output))
+    #     x = x + self.dropout(attn_output)
+    #     ff_output = self.feed_forward(x)
+    #     x = self.norm2(x + self.dropout(ff_output))
+    #     x = x + self.dropout(ff_output)
+    #     return x
     def forward_step(self, x, src_mask):
-        attn_output = self.self_attn(x, x, x, src_mask)
-        x = self.norm1(x + self.dropout(attn_output))
+        hidden = self.norm1(x)
+        attn_output = self.self_attn(hidden, hidden, hidden, src_mask)
         x = x + self.dropout(attn_output)
-        ff_output = self.feed_forward(x)
-        x = self.norm2(x + self.dropout(ff_output))
+        # ffn
+        ff_output = self.feed_forward(self.norm2(x))
         x = x + self.dropout(ff_output)
         return x
 
