@@ -192,8 +192,8 @@ def load_and_forecast(json_name, NN_path):
             )
             masks.append(mask)
 
-    n_sequence = 109
-    index = 0
+    n_sequence = 365
+    index = 5
     data_arr = torch.tensor(data_list[index]).to(device)
     data_to_forecast = torch.tensor(
         data_arr[:max_seq_length].unsqueeze(0), dtype=torch.float32
