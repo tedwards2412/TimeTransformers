@@ -17,4 +17,4 @@ ml cuda/12.1.0
 
 cd /home/tedwar42/TimeTransformers/scripts
 
-python aspectratio_training.py configs/aspectratio_scaling/nparams480k_AR32.yml
+python aspectratio_training.py configs/aspectratio_scaling/nparams1p6M_AR1.yml
