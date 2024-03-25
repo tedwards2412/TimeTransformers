@@ -1,0 +1,20 @@
+#!/bin/bash -l
+
+#SBATCH --job-name=480k_AR32
+#SBATCH --time=72:00:00
+#SBATCH --partition=ica100
+#SBATCH --qos=qos_gpu
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=9
+#SBATCH --mem-per-cpu=24G
+#SBATCH --gres=gpu:1
+#SBATCH -A tedwar41_gpu
+#SBATCH --mail-type=BEGIN,END
+#SBATCH --mail-user=tedwards2412@gmail.com
+
+conda activate ML
+ml cuda/12.1.0
+
+cd /home/tedwar42/TimeTransformers/scripts
+
+python aspectratio_training.py configs/aspectratio_scaling/nparams200k_AR1.yml
