@@ -1,6 +1,6 @@
 #!/bin/bash -l
 
-#SBATCH --job-name=480k_AR32
+#SBATCH --job-name=200k_AR1
 #SBATCH --time=72:00:00
 #SBATCH --partition=ica100
 #SBATCH --qos=qos_gpu
