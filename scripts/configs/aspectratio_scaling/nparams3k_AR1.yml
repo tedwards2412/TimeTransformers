@@ -4,7 +4,7 @@ transformer:
   num_heads: 1
   num_layers: 16
   d_ff: 16
-  dropout: 0.1
+  dropout: 0.0
   num_distribution_layers: 4
   loss_func: "studentT" # Should be Gaussian, MSE, or studentT
 
@@ -16,8 +16,8 @@ train:
   total_training_steps: 100000
   early_stopping: 250000
   warmup_steps: 3000
-  evaluation_interval: 1000
-  test_size: 0.01
+  evaluation_interval: 200
+  test_size: 0.1
 
 datasets:
   monash: # Total: 503,723,130
