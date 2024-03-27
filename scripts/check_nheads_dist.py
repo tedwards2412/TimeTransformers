@@ -50,27 +50,30 @@ def train(config):
     num_params = sum(p.numel() for p in transformer.parameters() if p.requires_grad)
     print("Number of parameters: ", num_params)
     print("Aspect ratio: ", d_model / num_layers)
+    print("Number of heads: ", num_heads)
 
-    return num_params, d_model / num_layers
+    return num_params, num_heads
 
 
-def check_aspectratio_dist():
-    yml_files = glob.glob("configs/aspectratio_scaling/*.yml")
+def check_nheads_dist():
+    yml_files = glob.glob("configs/nheads_scaling/*.yml")
     N_list = []
-    AR_list = []
+    nheads_list = []
 
     for config_file in yml_files:
-        N, AR = train(config_file)
+        print(config_file)
+        N, nh = train(config_file)
         N_list.append(N)
-        AR_list.append(AR)
+        nheads_list.append(nh)
 
-    plt.scatter(N_list, AR_list)
+    plt.scatter(N_list, nheads_list)
     plt.xlabel("Number of parameters")
-    plt.ylabel("Aspect ratio")
+    plt.ylabel("Number of heads")
+    plt.xlim(1e4, 1e8)
     plt.xscale("log")
     plt.yscale("log")
-    plt.savefig("plots/aspectratio_dist.pdf", bbox_inches="tight")
+    plt.savefig("plots/nheads_dist.pdf", bbox_inches="tight")
 
 
 if __name__ == "__main__":
-    check_aspectratio_dist()
+    check_nheads_dist()

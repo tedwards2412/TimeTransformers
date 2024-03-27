@@ -57,6 +57,7 @@ def train(config):
     num_params = sum(p.numel() for p in transformer.parameters() if p.requires_grad)
     print("Number of parameters: ", num_params)
     print("Aspect ratio: ", d_model / num_layers)
+    print("Number of Heads: ", num_heads)
 
     return None
 
