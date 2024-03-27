@@ -132,9 +132,11 @@ def train(config):
     wandb.init(
         project="timetransformers",
         entity="timetransformers",
-        name=f"aspectratio_{num_params}_{d_model / num_layers}",
+        name=f"nheads_{num_params}_{num_heads}",
         config=config,
     )
+    file_name = f"results/nheads_{num_params}_{num_heads}.json"
+    model_file_name = f"results/nheads_{num_params}_{num_heads}_final.pt"
 
     train_steps = []
     train_losses = []
@@ -259,7 +261,7 @@ def train(config):
                 if average_test_loss < min_loss:
                     torch.save(
                         transformer.state_dict(),
-                        f"results/aspectratio_{num_params}_{d_model / num_layers}_best.pt",
+                        f"results/nheads_{num_params}_{num_heads}_best.pt",
                     )
 
                 # Early stopping
@@ -293,10 +295,6 @@ def train(config):
     pbar.close()
 
     # Finally, lets save the losses
-    file_name = f"results/aspectratio_{num_params}_{d_model / num_layers}.json"
-    model_file_name = (
-        f"results/aspectratio_{num_params}_{d_model / num_layers}_final.pt"
-    )
     if loss_function == "Gaussian" or loss_function == "studentT":
         train_info = {
             "train_losses": train_losses,
