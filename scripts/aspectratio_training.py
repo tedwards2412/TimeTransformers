@@ -135,6 +135,10 @@ def train(config):
         name=f"aspectratio_{num_params}_{d_model / num_layers}",
         config=config,
     )
+    file_name = f"results/aspectratio_{num_params}_{d_model / num_layers}.json"
+    model_file_name = (
+        f"results/aspectratio_{num_params}_{d_model / num_layers}_final.pt"
+    )
 
     train_steps = []
     train_losses = []
@@ -293,10 +297,6 @@ def train(config):
     pbar.close()
 
     # Finally, lets save the losses
-    file_name = f"results/aspectratio_{num_params}_{d_model / num_layers}.json"
-    model_file_name = (
-        f"results/aspectratio_{num_params}_{d_model / num_layers}_final.pt"
-    )
     if loss_function == "Gaussian" or loss_function == "studentT":
         train_info = {
             "train_losses": train_losses,
