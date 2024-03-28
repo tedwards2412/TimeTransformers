@@ -5,9 +5,9 @@
 #SBATCH --partition=ica100
 #SBATCH --qos=qos_gpu
 #SBATCH --nodes=1
-#SBATCH --ntasks-per-node=48
-#SBATCH --mem-per-cpu=4G
-#SBATCH --gres=gpu:3
+#SBATCH --ntasks-per-node=9
+#SBATCH --mem-per-cpu=24G
+#SBATCH --gres=gpu:1
 #SBATCH -A tedwar41_gpu
 #SBATCH --mail-type=BEGIN,END
 #SBATCH --mail-user=tedwards2412@gmail.com
