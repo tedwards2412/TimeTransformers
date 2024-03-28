@@ -84,7 +84,7 @@ def aspect_ratio_plot():
         c=N_list,
         s=35,
         cmap=cm,
-        norm=LogNorm(vmin=10**3, vmax=10**7),
+        norm=LogNorm(vmin=10**4, vmax=10**6),
     )
     plt.colorbar(sc, label="Numer of Parameters")
     plt.xlabel("Aspect Ratio ($\mathrm{d}_m/ \mathrm{N}_l$)")
@@ -92,7 +92,7 @@ def aspect_ratio_plot():
     plt.xscale("log")
     plt.yscale("log")
     plt.xlim(0.8, 1500)
-    plt.ylim(0.01, 1.0)
+    plt.ylim(0.1, 0.2)
     # plt.show()
     plt.savefig("plots/aspectratio_sensitivity.pdf", bbox_inches="tight")
 
@@ -138,7 +138,7 @@ def aspect_ratio_plot_inverted():
     plt.xscale("log")
     plt.yscale("log")
     plt.xlim(1e3, 1e7)
-    plt.ylim(0.01, 1.0)
+    plt.ylim(0.1, 0.4)
     # plt.show()
     plt.savefig("plots/aspectratio_sensitivity_inverted.pdf", bbox_inches="tight")
 
