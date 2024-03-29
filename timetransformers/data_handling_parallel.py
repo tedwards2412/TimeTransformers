@@ -337,7 +337,7 @@ def load_datasets(datasets, train_split, rank, world_size):
             test_data_list,
             train_masks,
             test_masks,
-        ) = convert_df_to_numpy(dfs, rank, worldsize, train_split)
+        ) = convert_df_to_numpy(dfs, rank, world_size, train_split)
 
     if datasets["weather"]:
         print("Adding weather data...")
@@ -356,7 +356,7 @@ def load_datasets(datasets, train_split, rank, world_size):
                 train_split,
                 path,
                 rank,
-                worldsize,
+                world_size,
             )
     if datasets["traffic"]:
         print("Adding traffic data...")
@@ -376,7 +376,7 @@ def load_datasets(datasets, train_split, rank, world_size):
                 train_split,
                 path,
                 rank,
-                worldsize,
+                world_size,
             )
     if datasets["finance"]:
         print("Adding finance data...")
@@ -388,8 +388,13 @@ def load_datasets(datasets, train_split, rank, world_size):
                 train_masks,
                 test_masks,
             ) = add_yahoo_dataset(
-                training_data_list, test_data_list, train_masks, test_masks, train_split, rank,
-                worldsize,
+                training_data_list,
+                test_data_list,
+                train_masks,
+                test_masks,
+                train_split,
+                rank,
+                world_size,
             )
     if datasets["science"]:
         print("Adding science data...")
@@ -400,8 +405,13 @@ def load_datasets(datasets, train_split, rank, world_size):
                 train_masks,
                 test_masks,
             ) = add_ZTF_dataset(
-                training_data_list, test_data_list, train_masks, test_masks, train_split, rank,
-                worldsize,
+                training_data_list,
+                test_data_list,
+                train_masks,
+                test_masks,
+                train_split,
+                rank,
+                world_size,
             )
     if datasets["audio"]:
         print("Adding audio data...")
@@ -412,8 +422,13 @@ def load_datasets(datasets, train_split, rank, world_size):
                 train_masks,
                 test_masks,
             ) = add_arabic_audio_dataset(
-                training_data_list, test_data_list, train_masks, test_masks, train_split, rank,
-                worldsize,
+                training_data_list,
+                test_data_list,
+                train_masks,
+                test_masks,
+                train_split,
+                rank,
+                world_size,
             )
         if "commands" in datasets["audio"]:
             (
@@ -422,8 +437,13 @@ def load_datasets(datasets, train_split, rank, world_size):
                 train_masks,
                 test_masks,
             ) = add_command_audio_dataset(
-                training_data_list, test_data_list, train_masks, test_masks, train_split, rank,
-                worldsize,
+                training_data_list,
+                test_data_list,
+                train_masks,
+                test_masks,
+                train_split,
+                rank,
+                world_size,
             )
         if "birds" in datasets["audio"]:
             (
@@ -432,8 +452,13 @@ def load_datasets(datasets, train_split, rank, world_size):
                 train_masks,
                 test_masks,
             ) = add_bird_audio_dataset(
-                training_data_list, test_data_list, train_masks, test_masks, train_split, rank,
-                worldsize,
+                training_data_list,
+                test_data_list,
+                train_masks,
+                test_masks,
+                train_split,
+                rank,
+                world_size,
             )
     if datasets["energy"]:
         print("Adding energy data...")
@@ -444,8 +469,13 @@ def load_datasets(datasets, train_split, rank, world_size):
                 train_masks,
                 test_masks,
             ) = add_buildingbench_dataset(
-                training_data_list, test_data_list, train_masks, test_masks, train_split, rank,
-                worldsize,
+                training_data_list,
+                test_data_list,
+                train_masks,
+                test_masks,
+                train_split,
+                rank,
+                world_size,
             )
 
     return training_data_list, test_data_list, train_masks, test_masks
@@ -500,9 +530,8 @@ def convert_df_to_numpy(dfs, rank, world_size, train_split=0.8):
     return training_data, test_data, train_masks, test_masks
 
 
-
 def add_buildingbench_dataset(
-    training_data, test_data, train_masks, test_masks, train_split
+    training_data, test_data, train_masks, test_masks, train_split, rank, world_size
 ):
     buildingbench_files = glob.glob(energy_paths["buildingbench"] + "*.npy")
     rnd_indices = np.random.choice(len(buildingbench_files), 40, replace=False)
@@ -535,7 +564,14 @@ def add_buildingbench_dataset(
 
 
 def add_weather_dataset(
-    training_data, test_data, train_masks, test_masks, train_split, path
+    training_data,
+    test_data,
+    train_masks,
+    test_masks,
+    train_split,
+    path,
+    rank,
+    world_size,
 ):
     weather_data = np.load(path)
 
@@ -567,7 +603,14 @@ def add_weather_dataset(
 
 
 def add_ca_traffic_dataset(
-    training_data, test_data, train_masks, test_masks, train_split, path
+    training_data,
+    test_data,
+    train_masks,
+    test_masks,
+    train_split,
+    path,
+    rank,
+    world_size,
 ):
     traffic_data = np.load(path)
     data = traffic_data["arr_0"]
@@ -598,7 +641,9 @@ def add_ca_traffic_dataset(
     return training_data, test_data, train_masks, test_masks
 
 
-def add_yahoo_dataset(training_data, test_data, train_masks, test_masks, train_split):
+def add_yahoo_dataset(
+    training_data, test_data, train_masks, test_masks, train_split, rank, world_size
+):
     stock_returns = np.load(finance_paths["yahoo_returns"], allow_pickle=True)
     stock_volume = np.load(finance_paths["yahoo_volume"], allow_pickle=True)
 
@@ -654,7 +699,7 @@ def add_yahoo_dataset(training_data, test_data, train_masks, test_masks, train_s
 
 
 def add_command_audio_dataset(
-    training_data, test_data, train_masks, test_masks, train_split
+    training_data, test_data, train_masks, test_masks, train_split, rank, world_size
 ):
     speech_commands = np.load(audio_paths["commands"])
 
@@ -685,7 +730,7 @@ def add_command_audio_dataset(
 
 
 def add_arabic_audio_dataset(
-    training_data, test_data, train_masks, test_masks, train_split
+    training_data, test_data, train_masks, test_masks, train_split, rank, world_size
 ):
     arabic_audio = np.load(audio_paths["arabic"])
 
@@ -717,7 +762,7 @@ def add_arabic_audio_dataset(
 
 
 def add_bird_audio_dataset(
-    training_data, test_data, train_masks, test_masks, train_split
+    training_data, test_data, train_masks, test_masks, train_split, rank, world_size
 ):
     bird_audio = np.load(audio_paths["birds"])
 
@@ -746,7 +791,6 @@ def add_bird_audio_dataset(
             test_data.append(current_ts)
             test_masks.append(mask)
     return training_data, test_data, train_masks, test_masks
-
 
 
 traffic_paths = {"CA": data_path + "/traffic/processed_ca_traffic_data.npz"}
