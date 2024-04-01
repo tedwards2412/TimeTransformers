@@ -84,7 +84,7 @@ def aspect_ratio_plot():
         c=N_list,
         s=35,
         cmap=cm,
-        norm=LogNorm(vmin=10**4, vmax=10**6),
+        norm=LogNorm(vmin=10**4, vmax=10**7),
     )
     plt.colorbar(sc, label="Numer of Parameters")
     plt.xlabel("Aspect Ratio ($\mathrm{d}_m/ \mathrm{N}_l$)")
