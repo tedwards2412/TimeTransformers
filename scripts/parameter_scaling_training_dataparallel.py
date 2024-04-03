@@ -22,14 +22,17 @@ import sys
 cwd = os.getcwd()
 sys.path.insert(0, cwd + "/../timetransformers")
 
-from data_handling import TimeSeriesDataset, load_datasets
+from data_handling_parallel import TimeSeriesDataset, load_datasets
 from utils import GradualWarmupScheduler
 import Transformer
 
 
 def train(config):
+    import psutil
+    print("RAM available", psutil.virtual_memory()[1]/1e9)
     with open(config, "r") as file:
         config = yaml.safe_load(file)
+
 
     # Accessing the configuration values
     train_split = config["train"]["train_split"]
@@ -60,21 +63,23 @@ def train(config):
 
     device = torch.device(f"cuda:{dist.get_rank()}")
     torch.cuda.set_device(device)
-    num_workers = 60
+    num_workers = 30
 
     print("Number of workers: ", num_workers)
 
     # First lets download the data and make a data loader
     print("Loading data...")
+    rank = dist.get_rank()  # Get the current process rank
+    world_size = dist.get_world_size()
     (
         training_data_list,
         test_data_list,
         train_masks,
         test_masks,
-    ) = load_datasets(datasets_to_load, train_split)
+    ) = load_datasets(datasets_to_load, train_split, rank, world_size)
 
     train_dataset = TimeSeriesDataset(training_data_list, max_seq_length, train_masks)
-    train_sampler = DistributedSampler(train_dataset)
+    train_sampler = DistributedSampler(train_dataset, shuffle=False)
     train_dataloader = DataLoader(
         train_dataset,
         batch_size=batch_size,

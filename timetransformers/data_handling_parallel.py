@@ -9,6 +9,7 @@ import random
 import pandas as pd
 import os
 import glob
+import gc
 
 
 data_path = "/home/tedwar42/data_tedwar42/final"
@@ -327,7 +328,7 @@ def convert_tsf_to_dataframe(
 
 
 def load_datasets(datasets, train_split, rank, world_size):
-    np.random.seet(42)
+    np.random.seed(42)
     if datasets["monash"]:
         print("Adding Monash data...")
         dfs = download_data(datasets["monash"])
@@ -560,6 +561,9 @@ def add_buildingbench_dataset(
                 test_data.append(current_ts)
                 test_masks.append(mask)
 
+            
+    del buildingbench_data
+    gc.collect()
     return training_data, test_data, train_masks, test_masks
 
 
@@ -583,10 +587,14 @@ def add_weather_dataset(
         end_index = N_data if rank == world_size - 1 else (rank + 1) * samples_per_proc
 
         index_arange = np.arange(start_index, end_index)
+        ########
+        data = data[index_arange]
+        ########
         n_train_data = int(len(index_arange) * train_split)
-        train_indices = set(np.random.choice(index_arange, n_train_data, replace=False))
+        train_indices = set(np.random.choice(samples_per_proc, n_train_data, replace=False))
+        index_arange_0 = np.arange(0, samples_per_proc)
 
-        for i in tqdm(index_arange):
+        for i in tqdm(index_arange_0):
             current_ts = data[i]
             new_data_length = current_ts.shape[0]
             mask = np.ones(new_data_length)
@@ -599,6 +607,8 @@ def add_weather_dataset(
                 test_data.append(current_ts)
                 test_masks.append(mask)
 
+    del weather_data
+    gc.collect()
     return training_data, test_data, train_masks, test_masks
 
 
@@ -621,10 +631,14 @@ def add_ca_traffic_dataset(
     end_index = N_data if rank == world_size - 1 else (rank + 1) * samples_per_proc
 
     index_arange = np.arange(start_index, end_index)
+    ########
+    data = data[index_arange]
+    ########
     n_train_data = int(len(index_arange) * train_split)
-    train_indices = set(np.random.choice(index_arange, n_train_data, replace=False))
+    train_indices = set(np.random.choice(samples_per_proc, n_train_data, replace=False))
+    index_arange_0 = np.arange(0, samples_per_proc)
 
-    for i in tqdm(index_arange):
+    for i in tqdm(index_arange_0):
         current_ts = data[i]
         new_data_length = current_ts.shape[0]
         mask = ~np.isnan(current_ts)
@@ -638,6 +652,8 @@ def add_ca_traffic_dataset(
             test_data.append(current_ts)
             test_masks.append(mask)
 
+    del data, traffic_data
+    gc.collect()
     return training_data, test_data, train_masks, test_masks
 
 
@@ -710,11 +726,16 @@ def add_command_audio_dataset(
     start_index = rank * samples_per_proc
     end_index = N_data if rank == world_size - 1 else (rank + 1) * samples_per_proc
 
-    index_arange = np.arange(start_index, end_index)
-    n_train_data = int(len(index_arange) * train_split)
-    train_indices = set(np.random.choice(index_arange, n_train_data, replace=False))
 
-    for i in tqdm(index_arange):
+    index_arange = np.arange(start_index, end_index)
+    ########
+    speech_commands = speech_commands[index_arange]
+    ########
+    n_train_data = int(len(index_arange) * train_split)
+    train_indices = set(np.random.choice(samples_per_proc, n_train_data, replace=False))
+    index_arange_0 = np.arange(0, samples_per_proc)
+
+    for i in tqdm(index_arange_0):
         current_ts = speech_commands[i]
         new_data_length = current_ts.shape[0]
         mask = np.ones(new_data_length)
@@ -726,6 +747,9 @@ def add_command_audio_dataset(
         else:
             test_data.append(current_ts)
             test_masks.append(mask)
+
+    del speech_commands
+    gc.collect()
     return training_data, test_data, train_masks, test_masks
 
 
@@ -742,10 +766,14 @@ def add_arabic_audio_dataset(
     end_index = N_data if rank == world_size - 1 else (rank + 1) * samples_per_proc
 
     index_arange = np.arange(start_index, end_index)
+    ########
+    arabic_audio = arabic_audio[index_arange]
+    ########
     n_train_data = int(len(index_arange) * train_split)
-    train_indices = set(np.random.choice(index_arange, n_train_data, replace=False))
+    train_indices = set(np.random.choice(samples_per_proc, n_train_data, replace=False))
+    index_arange_0 = np.arange(0, samples_per_proc)
 
-    for i in tqdm(index_arange):
+    for i in tqdm(index_arange_0):
         ts_length = int(arabic_audio[i, -1])
         current_ts = arabic_audio[i, :ts_length]
         new_data_length = current_ts.shape[0]
@@ -758,6 +786,9 @@ def add_arabic_audio_dataset(
         else:
             test_data.append(current_ts)
             test_masks.append(mask)
+
+    del arabic_audio
+    gc.collect()
     return training_data, test_data, train_masks, test_masks
 
 
@@ -774,10 +805,14 @@ def add_bird_audio_dataset(
     end_index = N_data if rank == world_size - 1 else (rank + 1) * samples_per_proc
 
     index_arange = np.arange(start_index, end_index)
+    ########
+    bird_audio = bird_audio[index_arange]
+    ########
     n_train_data = int(len(index_arange) * train_split)
-    train_indices = set(np.random.choice(index_arange, n_train_data, replace=False))
+    train_indices = set(np.random.choice(samples_per_proc, n_train_data, replace=False))
+    index_arange_0 = np.arange(0, samples_per_proc)
 
-    for i in tqdm(index_arange):
+    for i in tqdm(index_arange_0):
         ts_length = int(bird_audio[i, -1])
         current_ts = bird_audio[i, :ts_length]
         new_data_length = current_ts.shape[0]
@@ -790,6 +825,9 @@ def add_bird_audio_dataset(
         else:
             test_data.append(current_ts)
             test_masks.append(mask)
+
+    del bird_audio
+    gc.collect()
     return training_data, test_data, train_masks, test_masks
 
 
