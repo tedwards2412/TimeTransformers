@@ -1,7 +1,7 @@
 #!/bin/bash -l
 
 #SBATCH -J 12p8M_AR1
-#SBATCH -t 72:00:00
+#SBATCH -t 96:00:00
 #SBATCH -p amper2
 #SBATCH --reservation=cosmicexplorer
 #SBATCH --nodes=1
