@@ -189,17 +189,17 @@ def train(config):
             optimizer.step()
             scheduler.step()
 
-            if len(train_losses) > 1 and (
+            if len(train_losses) > 1000 and (
                 abs(train_losses[-1] - train_losses[-2]) > 1.0
             ):
                 should_break = True
                 break
 
-            if len(train_losses) > 1 and (train_losses[0] > train_losses[-1]):
+            if len(train_losses) > 1000 and (train_losses[0] < train_losses[-1]):
                 should_break = True
                 break
 
-            if len(train_losses) > 1 and (torch.sum(torch.isnan(train_losses)) > 0):
+            if len(train_losses) > 1000 and (torch.sum(torch.isnan(train_losses)) > 0):
                 should_break = True
                 break
 
