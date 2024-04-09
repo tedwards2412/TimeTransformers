@@ -199,7 +199,9 @@ def train(config):
                 should_break = True
                 break
 
-            if len(train_losses) > 1000 and (torch.sum(torch.isnan(train_losses)) > 0):
+            if len(train_losses) > 1000 and (
+                torch.sum(torch.isnan(torch.tensor(train_losses))) > 0
+            ):
                 should_break = True
                 break
 
