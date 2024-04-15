@@ -190,7 +190,7 @@ def train(config):
             scheduler.step()
 
             if len(train_losses) > 1000 and (
-                abs(train_losses[-1] - train_losses[-2]) > 1.0
+                abs(train_losses[-1] - train_losses[-2]) > 1.5
             ):
                 should_break = True
                 break
