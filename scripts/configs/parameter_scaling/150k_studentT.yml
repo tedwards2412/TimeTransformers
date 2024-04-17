@@ -1,7 +1,7 @@
 transformer:
   output_dim: 3
   d_model: 64
-  num_heads: 1
+  num_heads: 4
   num_layers: 4
   d_ff: 64
   dropout: 0.0
@@ -13,7 +13,7 @@ train:
   max_seq_length: 256
   batch_size: 512
   test_batch_size: 512
-  total_training_steps: 10000
+  total_training_steps: 100000
   early_stopping: 250000
   warmup_steps: 3000
   evaluation_interval: 200
