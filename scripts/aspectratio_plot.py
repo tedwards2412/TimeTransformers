@@ -102,7 +102,7 @@ def aspect_ratio_interpolation():
 
     # Plotting the interpolated data
     plt.figure(figsize=(7, 5))
-    cm = mpl.colormaps["RdYlBu"]
+    cm = mpl.colormaps["RdYlBu_r"]
     plt.contourf(
         AR_grid,
         CRPS_grid,
@@ -115,7 +115,7 @@ def aspect_ratio_interpolation():
     plt.xlabel("Aspect Ratio ($\mathrm{d}_m/ \mathrm{N}_l$)")
     plt.ylabel("Minimum CRPS")
     plt.xscale("log")
-    plt.yscale("log")
+    # plt.yscale("log")
     plt.xlim(AR_min, AR_max)
     plt.ylim(CRPS_min, CRPS_max)
     plt.savefig("plots/aspectratio_interpolated.pdf", bbox_inches="tight")
@@ -139,7 +139,7 @@ def aspect_ratio_plot():
         CRPS_list.append(min(data["CRPS_test_losses"]))
 
     plt.figure(figsize=(7, 5))
-    cm = mpl.colormaps["RdYlBu"]
+    cm = mpl.colormaps["RdYlBu_r"]
     sc = plt.scatter(
         AR_list,
         CRPS_list,
@@ -148,13 +148,13 @@ def aspect_ratio_plot():
         cmap=cm,
         norm=LogNorm(vmin=10**4, vmax=10**8),
     )
-    plt.colorbar(sc, label="Numer of Parameters")
+    plt.colorbar(sc, label="Number of Parameters")
     plt.xlabel("Aspect Ratio ($\mathrm{d}_m/ \mathrm{N}_l$)")
     plt.ylabel("Minimum CRPS")
     plt.xscale("log")
-    plt.yscale("log")
+    # plt.yscale("log")
     plt.xlim(0.8, 1500)
-    plt.ylim(0.08, 0.2)
+    plt.ylim(0.08, 0.18)
     # plt.show()
     plt.savefig("plots/aspectratio_sensitivity.pdf", bbox_inches="tight")
 
@@ -183,7 +183,7 @@ def aspect_ratio_plot_inverted():
         CRPS_list.append(min(data["CRPS_test_losses"]))
 
     plt.figure(figsize=(7, 5))
-    cm = mpl.colormaps["RdYlBu"]
+    cm = mpl.colormaps["RdYlBu_r"]
     sc = plt.scatter(
         N_list,
         CRPS_list,
@@ -193,7 +193,7 @@ def aspect_ratio_plot_inverted():
         norm=LogNorm(vmin=0.8, vmax=1500),
     )
     plt.colorbar(sc, label="Aspect Ratio ($\mathrm{d}_m/ \mathrm{N}_l$)")
-    plt.xlabel("Numer of Parameters")
+    plt.xlabel("Number of Parameters")
     plt.ylabel("Minimum CRPS")
     plt.xscale("log")
     plt.yscale("log")
