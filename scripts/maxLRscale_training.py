@@ -192,16 +192,19 @@ def train(config):
             if len(train_losses) > 1000 and (
                 abs(train_losses[-1] - train_losses[-2]) > 1.5
             ):
+                print("Derivative of loss is too large, breaking")
                 should_break = True
                 break
 
             if len(train_losses) > 1000 and (train_losses[0] < train_losses[-1]):
+                print("Loss is larger than initial loss, breaking")
                 should_break = True
                 break
 
             if len(train_losses) > 1000 and (
                 torch.sum(torch.isnan(torch.tensor(train_losses))) > 0
             ):
+                print("Loss is NaN, breaking")
                 should_break = True
                 break
 
