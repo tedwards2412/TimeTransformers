@@ -1,9 +1,9 @@
 transformer:
   output_dim: 3
-  d_model: 128
+  d_model: 32
   num_heads: 4
-  num_layers: 8
-  d_ff: 128
+  num_layers: 2
+  d_ff: 32
   dropout: 0.0
   num_distribution_layers: 4
   loss_func: "studentT" # Should be Gaussian, MSE, or studentT

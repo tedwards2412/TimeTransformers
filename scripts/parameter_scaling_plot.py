@@ -4,6 +4,20 @@ import numpy as np
 from scipy.optimize import curve_fit
 import matplotlib as mpl
 
+import os
+import torch
+import yaml
+import glob
+
+# This is just until temporary implementation
+import sys
+
+cwd = os.getcwd()
+sys.path.insert(0, cwd + "/../timetransformers")
+
+import Transformer
+
+
 # color_list = ["purple", "#306B37", "darkgoldenrod", "#3F7BB6", "#BF4145", "#CF630A"]
 # color_list = ["#2E4854", "#557B82", "#BAB2A9", "#C98769", "#A1553A", "darkgoldenrod"]
 # color_list = ["#12464F", "#DF543E", "#C8943B", "#378F8C", "#AD9487"]
@@ -231,7 +245,72 @@ def parameter_MSE_CRPS_scaling_plot():
 #     plt.savefig("plots/parameters_vs_testloss_studentT.pdf", bbox_inches="tight")
 
 
+def train(config):
+    with open(config, "r") as file:
+        config = yaml.safe_load(file)
+    # Transformer parameters
+    output_dim = config["transformer"]["output_dim"]
+    d_model = config["transformer"]["d_model"]
+    num_heads = config["transformer"]["num_heads"]
+    num_layers = config["transformer"]["num_layers"]
+    d_ff = config["transformer"]["d_ff"]
+    dropout = config["transformer"]["dropout"]
+    num_distribution_layers = config["transformer"]["num_distribution_layers"]
+    max_seq_length = config["train"]["max_seq_length"]
+
+    device = torch.device(
+        "cuda"
+        if torch.cuda.is_available()
+        # else "mps" if torch.backends.mps.is_available() else "cpu"
+        else "cpu"
+    )
+    print(f"Using {device}")
+
+    transformer = Transformer.Decoder_Transformer(
+        output_dim,
+        d_model,
+        num_heads,
+        num_layers,
+        d_ff,
+        max_seq_length,
+        dropout,
+        num_distribution_layers,
+        # patch_size,
+        device=device,
+    ).to(device)
+    num_params = sum(p.numel() for p in transformer.parameters() if p.requires_grad)
+    print("Number of parameters: ", num_params)
+    print("Aspect ratio: ", d_model / num_layers)
+    print("Number of heads: ", num_heads)
+
+    return num_params, num_heads
+
+
+def test_parameter_dist():
+    yml_files = glob.glob("configs/parameter_scaling/*.yml")
+    N_list = []
+    nheads_list = []
+    CRPS_min = []
+
+    for config_file in yml_files:
+        print(config_file)
+        N, nh = train(config_file)
+        N_list.append(N)
+        nheads_list.append(nh)
+        CRPS_min.append(0.1)
+
+    plt.scatter(N_list, CRPS_min)
+    plt.xlim(1e3, 1e9)
+    plt.xscale("log")
+    plt.yscale("log")
+    plt.show()
+    # plt.savefig("plots/nheads_dist.pdf", bbox_inches="tight")
+
+    return None
+
+
 if __name__ == "__main__":
-    parameter_MSE_CRPS_scaling_plot()
+    # parameter_MSE_CRPS_scaling_plot()
     # parameter_test_scaling_plot()
-    plot_combined_losses()
+    # plot_combined_losses()
+    test_parameter_dist()
