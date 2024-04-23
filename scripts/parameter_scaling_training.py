@@ -23,6 +23,11 @@ from utils import GradualWarmupScheduler
 import Transformer
 
 
+def LR_function(x, loga, b, c):
+    a = 10**loga
+    return c + (x / a) ** b
+
+
 def train(config):
     with open(config, "r") as file:
         config = yaml.safe_load(file)
@@ -124,7 +129,10 @@ def train(config):
     # max_learning_rate = 3.2e-3 - 1.7e-4 * np.log(num_params)
     # max_learning_rate = max(1e-4, 3.2e-3 - 2.0e-4 * np.log(num_params))
     # max_learning_rate = max(1e-4, 3.239e-3 - 1.7e-4 * np.log(num_params))
-    max_learning_rate = max(1e-4, 3.239e-3 - 2.0e-4 * np.log(num_params))
+
+    LR_func_params = np.loadtxt("fitted_function.txt")
+    max_learning_rate = LR_function(num_params, *LR_func_params)
+
     print(f"Max learning rate: {max_learning_rate}")
     optimizer = optim.AdamW(transformer.parameters(), lr=max_learning_rate)
     cosine_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(

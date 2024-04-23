@@ -283,7 +283,7 @@ def train(config):
     print("Aspect ratio: ", d_model / num_layers)
     print("Number of heads: ", num_heads)
 
-    return num_params, num_heads
+    return num_params, num_heads, d_model / num_layers
 
 
 def test_parameter_dist():
@@ -291,20 +291,24 @@ def test_parameter_dist():
     N_list = []
     nheads_list = []
     CRPS_min = []
+    AR_list = []
 
     for config_file in yml_files:
         print(config_file)
-        N, nh = train(config_file)
+        N, nh, AR = train(config_file)
         N_list.append(N)
         nheads_list.append(nh)
         CRPS_min.append(0.1)
+        AR_list.append(AR)
 
-    plt.scatter(N_list, CRPS_min)
+    plt.scatter(N_list, AR_list)
     plt.xlim(1e3, 1e9)
     plt.xscale("log")
     plt.yscale("log")
-    plt.show()
-    # plt.savefig("plots/nheads_dist.pdf", bbox_inches="tight")
+    plt.xlabel("Number of parameters")
+    plt.ylabel("Aspect ratio")
+    # plt.show()
+    plt.savefig("plots/parameter_scaling_dist.pdf", bbox_inches="tight")
 
     return None
 
