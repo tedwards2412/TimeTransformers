@@ -6,7 +6,7 @@ import pickle
 
 def fit_max_LR_func():
     parameter_count_list = np.array([104579, 580355, 2242051, 18277379])
-    highest_LR = np.array([0.05, 0.0018803, 0.00070711, 0.00070711])
+    highest_LR = np.array([0.005, 0.0018803, 0.00070711, 0.00070711])
 
     # Power law function
     def power_law(x, loga, b):
