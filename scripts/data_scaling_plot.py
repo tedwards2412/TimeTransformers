@@ -3,9 +3,7 @@ import json
 import numpy as np
 from scipy.optimize import curve_fit
 
-color_list = ["#4D4D42", "#A0071F", "#2E6C9D", "#5F2E06", "#DF9906", "#12464F", "#AF5D25"]
-ls_list = ["-", "--", "-.", ":", "-", "--", "-."]
-
+plt.style.use("plots.mplstyle")
 
 
 def data_MSEtest_scaling_plot():

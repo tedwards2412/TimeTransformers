@@ -1,0 +1,28 @@
+font.size: 18
+legend.fontsize: 18
+legend.frameon: False
+axes.labelsize: 18
+axes.titlesize: 18
+xtick.labelsize: 18
+ytick.labelsize: 18
+figure.figsize: 7, 5
+xtick.top: True
+axes.unicode_minus: False
+ytick.right: True
+xtick.bottom: True
+ytick.left: True
+xtick.major.pad: 8
+xtick.major.size: 8
+xtick.minor.size: 4
+ytick.major.size: 8
+ytick.minor.size: 4
+xtick.direction: in
+ytick.direction: in
+axes.linewidth: 2.0
+text.usetex: False
+font.family: serif
+font.serif: cmr10
+mathtext.fontset: cm
+axes.formatter.use_mathtext: True  # needed when using cm=cmr10 for normal text
+
+axes.prop_cycle: cycler('color', ["4D4D42" "A0071F", "2E6C9D", "5F2E06", "DF9906", "12464F", "AF5D25"])

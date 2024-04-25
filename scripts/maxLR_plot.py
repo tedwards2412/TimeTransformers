@@ -10,46 +10,7 @@ from matplotlib.colors import LogNorm
 # color_list = ["#2E4854", "#557B82", "#BAB2A9", "#C98769", "#A1553A", "darkgoldenrod"]
 # color_list = ["#12464F", "#DF543E", "#C8943B", "#378F8C", "#AD9487"]
 # color_list = ["#909B55", "#4B3025", "#AF5D25", "#C3B426", "#C8A895"]
-params = {
-    "font.size": 18,
-    "legend.fontsize": 18,
-    "legend.frameon": False,
-    "axes.labelsize": 18,
-    "axes.titlesize": 18,
-    "xtick.labelsize": 18,
-    "ytick.labelsize": 18,
-    "figure.figsize": (7, 5),
-    "xtick.top": True,
-    "axes.unicode_minus": False,
-    "ytick.right": True,
-    "xtick.bottom": True,
-    "ytick.left": True,
-    "xtick.major.pad": 8,
-    "xtick.major.size": 8,
-    "xtick.minor.size": 4,
-    "ytick.major.size": 8,
-    "ytick.minor.size": 4,
-    "xtick.direction": "in",
-    "ytick.direction": "in",
-    "axes.linewidth": 1.5,
-    "text.usetex": False,
-    "font.family": "serif",
-    "font.serif": "cmr10",
-    "mathtext.fontset": "cm",
-    "axes.formatter.use_mathtext": True,  # needed when using cm=cmr10 for normal text
-}
-mpl.rcParams.update(params)
-
-color_list = [
-    "#4D4D42",
-    "#A0071F",
-    "#2E6C9D",
-    "#5F2E06",
-    "#DF9906",
-    "#12464F",
-    "#AF5D25",
-]
-ls_list = ["-", "--", "-.", ":", "-", "--", "-."]
+plt.style.use("plots.mplstyle")
 
 
 def max_LR_plot():
@@ -86,7 +47,7 @@ def max_LR_plot():
         c=N_list[~divege_list],
         s=35,
         cmap=cm,
-        norm=LogNorm(vmin=10**4, vmax=10**7),
+        norm=LogNorm(vmin=10**5, vmax=10**7),
     )
     # plt.colorbar(sc, label="Number of Parameters")
 
@@ -97,7 +58,7 @@ def max_LR_plot():
         s=35,
         marker="x",
         cmap=cm,
-        norm=LogNorm(vmin=10**4, vmax=10**7),
+        norm=LogNorm(vmin=10**5, vmax=10**7),
     )
     plt.colorbar(sc, label="Number of Parameters")
 
