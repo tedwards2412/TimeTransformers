@@ -1,7 +1,7 @@
 #!/bin/bash -l
 
 #SBATCH --job-name=100M
-#SBATCH --time=96:00:00
+#SBATCH --time=72:00:00
 #SBATCH --partition=ica100
 #SBATCH --qos=qos_gpu
 #SBATCH --nodes=1
