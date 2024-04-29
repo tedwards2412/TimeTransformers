@@ -69,6 +69,23 @@ def train(config):
     elif device.type == "mps" or device.type == "cpu":
         num_workers = 6
 
+    # Now lets make a transformer
+
+    transformer = Transformer.Decoder_Transformer(
+        output_dim,
+        d_model,
+        num_heads,
+        num_layers,
+        d_ff,
+        max_seq_length,
+        dropout,
+        num_distribution_layers,
+        # patch_size,
+        device=device,
+    ).to(device)
+    num_params = sum(p.numel() for p in transformer.parameters() if p.requires_grad)
+    print("Number of parameters: ", num_params)
+
     # Wrap the model with DataParallel
     if torch.cuda.device_count() > 1:
         print(f"Using {torch.cuda.device_count()} GPUs!")
@@ -115,23 +132,6 @@ def train(config):
 
     print("Train batches: ", len(train_dataloader))
     print("Test batches: ", len(test_dataloader))
-
-    # Now lets make a transformer
-
-    transformer = Transformer.Decoder_Transformer(
-        output_dim,
-        d_model,
-        num_heads,
-        num_layers,
-        d_ff,
-        max_seq_length,
-        dropout,
-        num_distribution_layers,
-        # patch_size,
-        device=device,
-    ).to(device)
-    num_params = sum(p.numel() for p in transformer.parameters() if p.requires_grad)
-    print("Number of parameters: ", num_params)
 
     # Now lets train it!
     # max_learning_rate = 0.003239 - 0.0001395 * np.log(num_params)
