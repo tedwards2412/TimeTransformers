@@ -2,7 +2,7 @@
 
 #SBATCH --job-name=100M
 #SBATCH --time=72:00:00
-#SBATCH --partition=a100
+#SBATCH --partition=ica100
 #SBATCH --qos=qos_gpu
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=48
