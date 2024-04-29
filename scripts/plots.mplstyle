@@ -25,4 +25,4 @@ font.serif: cmr10
 mathtext.fontset: cm
 axes.formatter.use_mathtext: True  # needed when using cm=cmr10 for normal text
 
-axes.prop_cycle: cycler('color', ["4D4D42" "A0071F", "2E6C9D", "5F2E06", "DF9906", "12464F", "AF5D25"])
+axes.prop_cycle: cycler('color', ["4D4D42", "A0071F", "2E6C9D", "5F2E06", "DF9906", "12464F", "AF5D25"])

@@ -10,6 +10,7 @@ import json
 import numpy as np
 import time
 import wandb
+from torch.nn import DataParallel
 
 # This is just until temporary implementation
 import os
@@ -68,6 +69,12 @@ def train(config):
     elif device.type == "mps" or device.type == "cpu":
         num_workers = 6
 
+    # Wrap the model with DataParallel
+    if torch.cuda.device_count() > 1:
+        print(f"Using {torch.cuda.device_count()} GPUs!")
+        transformer = DataParallel(transformer)
+        num_workers = int(11 * torch.cuda.device_count())
+
     print("Number of workers: ", num_workers)
 
     # First lets download the data and make a data loader
@@ -90,12 +97,14 @@ def train(config):
         test_masks,
         test=True,
         test_size=test_size,
+        pin_memory=True,
     )
     test_dataloader = DataLoader(
         test_dataset,
         batch_size=test_batch_size,
         shuffle=True,
         num_workers=num_workers,
+        pin_memory=True,
     )
 
     print("Training dataset size: ", train_dataset.__len__())
