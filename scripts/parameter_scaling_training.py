@@ -114,14 +114,12 @@ def train(config):
         test_masks,
         test=True,
         test_size=test_size,
-        pin_memory=True,
     )
     test_dataloader = DataLoader(
         test_dataset,
         batch_size=test_batch_size,
         shuffle=True,
         num_workers=num_workers,
-        pin_memory=True,
     )
 
     print("Training dataset size: ", train_dataset.__len__())
