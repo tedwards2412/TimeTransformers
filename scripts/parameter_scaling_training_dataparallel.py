@@ -10,10 +10,7 @@ import json
 import numpy as np
 import time
 import wandb
-
-import torch.distributed as dist
-from torch.nn.parallel import DistributedDataParallel as DDP
-from torch.utils.data.distributed import DistributedSampler
+from torch.nn import DataParallel
 
 # This is just until temporary implementation
 import os
@@ -22,17 +19,19 @@ import sys
 cwd = os.getcwd()
 sys.path.insert(0, cwd + "/../timetransformers")
 
-from data_handling_parallel import TimeSeriesDataset, load_datasets
+from data_handling import TimeSeriesDataset, load_datasets
 from utils import GradualWarmupScheduler
 import Transformer
 
 
+def LR_function(x, loga, b, c):
+    a = 10**loga
+    return c + (x / a) ** b
+
+
 def train(config):
-    import psutil
-    print("RAM available", psutil.virtual_memory()[1]/1e9)
     with open(config, "r") as file:
         config = yaml.safe_load(file)
-
 
     # Accessing the configuration values
     train_split = config["train"]["train_split"]
@@ -58,60 +57,17 @@ def train(config):
     # Datasets
     datasets_to_load = config["datasets"]
 
-    # Initialize the distributed environment.
-    dist.init_process_group(backend="nccl")
-
-    device = torch.device(f"cuda:{dist.get_rank()}")
-    torch.cuda.set_device(device)
-    num_workers = 30
-
-    print("Number of workers: ", num_workers)
-
-    # First lets download the data and make a data loader
-    print("Loading data...")
-    rank = dist.get_rank()  # Get the current process rank
-    world_size = dist.get_world_size()
-    (
-        training_data_list,
-        test_data_list,
-        train_masks,
-        test_masks,
-    ) = load_datasets(datasets_to_load, train_split, rank, world_size)
-
-    train_dataset = TimeSeriesDataset(training_data_list, max_seq_length, train_masks)
-    train_sampler = DistributedSampler(train_dataset, shuffle=False)
-    train_dataloader = DataLoader(
-        train_dataset,
-        batch_size=batch_size,
-        shuffle=False,
-        num_workers=num_workers,
-        sampler=train_sampler,
+    device = torch.device(
+        "cuda"
+        if torch.cuda.is_available()
+        # else "mps" if torch.backends.mps.is_available() else "cpu"
+        else "cpu"
     )
-
-    test_dataset = TimeSeriesDataset(
-        test_data_list,
-        max_seq_length,
-        test_masks,
-        test=True,
-        test_size=test_size,
-    )
-    test_sampler = DistributedSampler(test_dataset, shuffle=False)
-    test_dataloader = DataLoader(
-        test_dataset,
-        batch_size=test_batch_size,
-        shuffle=False,
-        num_workers=num_workers,
-        sampler=test_sampler,
-    )
-
-    print("Training dataset size: ", train_dataset.__len__())
-    print("Test dataset size: ", test_dataset.__len__())
-
-    print("Total number of training tokens:", train_dataset.total_length())
-    print("Total number of test tokens:", test_dataset.total_length())
-
-    print("Train batches: ", len(train_dataloader))
-    print("Test batches: ", len(test_dataloader))
+    print(f"Using {device}")
+    if device.type == "cuda":
+        num_workers = 11
+    elif device.type == "mps" or device.type == "cpu":
+        num_workers = 6
 
     # Now lets make a transformer
 
@@ -129,7 +85,51 @@ def train(config):
     ).to(device)
     num_params = sum(p.numel() for p in transformer.parameters() if p.requires_grad)
     print("Number of parameters: ", num_params)
-    transformer = DDP(transformer, device_ids=[device])
+
+    # Wrap the model with DataParallel
+    if torch.cuda.device_count() > 1:
+        print(f"Using {torch.cuda.device_count()} GPUs!")
+        transformer = DataParallel(transformer)
+        num_workers = int(6 * torch.cuda.device_count())
+
+    print("Number of workers: ", num_workers)
+
+    # First lets download the data and make a data loader
+    print("Loading data...")
+    (
+        training_data_list,
+        test_data_list,
+        train_masks,
+        test_masks,
+    ) = load_datasets(datasets_to_load, train_split)
+
+    train_dataset = TimeSeriesDataset(training_data_list, max_seq_length, train_masks)
+    train_dataloader = DataLoader(
+        train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers
+    )
+
+    test_dataset = TimeSeriesDataset(
+        test_data_list,
+        max_seq_length,
+        test_masks,
+        test=True,
+        test_size=test_size,
+    )
+    test_dataloader = DataLoader(
+        test_dataset,
+        batch_size=test_batch_size,
+        shuffle=True,
+        num_workers=num_workers,
+    )
+
+    print("Training dataset size: ", train_dataset.__len__())
+    print("Test dataset size: ", test_dataset.__len__())
+
+    print("Total number of training tokens:", train_dataset.total_length())
+    print("Total number of test tokens:", test_dataset.total_length())
+
+    print("Train batches: ", len(train_dataloader))
+    print("Test batches: ", len(test_dataloader))
 
     # Now lets train it!
     # max_learning_rate = 0.003239 - 0.0001395 * np.log(num_params)
@@ -137,7 +137,9 @@ def train(config):
     # max_learning_rate = max(1e-4, 3.2e-3 - 2.0e-4 * np.log(num_params))
     # max_learning_rate = max(1e-4, 3.239e-3 - 1.7e-4 * np.log(num_params))
 
-    max_learning_rate = max(1e-4, 3.239e-3 - 2.0e-4 * np.log(num_params))
+    LR_func_params = np.loadtxt("fitted_function.txt")
+    max_learning_rate = LR_function(num_params, *LR_func_params)
+
     print(f"Max learning rate: {max_learning_rate}")
     optimizer = optim.AdamW(transformer.parameters(), lr=max_learning_rate)
     cosine_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
@@ -187,13 +189,13 @@ def train(config):
             output = transformer(batched_data, custom_mask=mask.to(device))
 
             if loss_function == "Gaussian":
-                loss = transformer.Gaussian_loss(output, batched_data_true)
+                loss = transformer.module.Gaussian_loss(output, batched_data_true)
             elif loss_function == "studentT":
-                loss = transformer.studentT_loss(
+                loss = transformer.module.studentT_loss(
                     output, batched_data_true, mask=mask.to(device)
                 )
             elif loss_function == "MSE":
-                loss = transformer.MSE(output, batched_data_true)
+                loss = transformer.module.MSE(output, batched_data_true)
 
             train_losses.append(loss.item())
             train_steps.append(step_counter)
@@ -223,11 +225,11 @@ def train(config):
                         output = transformer(batched_data)
 
                         if loss_function == "Gaussian":
-                            test_loss = transformer.Gaussian_loss(
+                            test_loss = transformer.module.Gaussian_loss(
                                 output, batched_data_true
                             )
                             # test_loss_MSE = transformer.MSE(output, batched_data_true)
-                            test_loss_CRPS = transformer.crps_student_t_approx(
+                            test_loss_CRPS = transformer.module.crps_student_t_approx(
                                 output, batched_data_true
                             )
                             # total_MSE_test_loss += (
@@ -238,13 +240,13 @@ def train(config):
                             )
 
                         if loss_function == "studentT":
-                            test_loss = transformer.studentT_loss(
+                            test_loss = transformer.module.studentT_loss(
                                 output, batched_data_true, mask=mask.to(device)
                             )
-                            test_loss_MSE = transformer.MSE(
+                            test_loss_MSE = transformer.module.MSE(
                                 output, batched_data_true, mask=mask.to(device)
                             )
-                            test_loss_CRPS = transformer.crps_student_t_approx(
+                            test_loss_CRPS = transformer.module.crps_student_t_approx(
                                 output, batched_data_true, mask=mask.to(device)
                             )
                             total_MSE_test_loss += (
@@ -255,7 +257,7 @@ def train(config):
                             )
 
                         elif loss_function == "MSE":
-                            test_loss = transformer.MSE(
+                            test_loss = transformer.module.MSE(
                                 output, batched_data_true, mask=mask.to(device)
                             )
 
@@ -343,7 +345,5 @@ if __name__ == "__main__":
         "config_file", type=str, help="Path to the configuration YAML file."
     )
     args = parser.parse_args()
-    # The script now needs to be run with something like:
-    # torch.distributed.launch --nproc_per_node=NUM_GPUS_YOU_HAVE train_script.py --config_file YOUR_CONFIG_FILE
 
     train(args.config_file)

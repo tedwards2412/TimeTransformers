@@ -16,4 +16,4 @@ ml cuda/12.1.0
 
 cd /home/tedwar42/TimeTransformers/scripts
 
-python parameter_scaling_training.py configs/parameter_scaling/100M_studentT.yml
+python parameter_scaling_training_dataparallel.py configs/parameter_scaling/100M_studentT.yml

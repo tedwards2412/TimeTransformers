@@ -87,10 +87,10 @@ def train(config):
     print("Number of parameters: ", num_params)
 
     # Wrap the model with DataParallel
-    if torch.cuda.device_count() > 1:
-        print(f"Using {torch.cuda.device_count()} GPUs!")
-        transformer = DataParallel(transformer)
-        num_workers = int(3 * torch.cuda.device_count())
+    # if torch.cuda.device_count() > 1:
+    #     print(f"Using {torch.cuda.device_count()} GPUs!")
+    #     transformer = DataParallel(transformer)
+    #     num_workers = int(3 * torch.cuda.device_count())
 
     print("Number of workers: ", num_workers)
 
