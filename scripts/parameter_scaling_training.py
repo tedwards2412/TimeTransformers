@@ -90,7 +90,7 @@ def train(config):
     if torch.cuda.device_count() > 1:
         print(f"Using {torch.cuda.device_count()} GPUs!")
         transformer = DataParallel(transformer)
-        num_workers = int(4 * torch.cuda.device_count())
+        num_workers = int(3 * torch.cuda.device_count())
 
     print("Number of workers: ", num_workers)
 
