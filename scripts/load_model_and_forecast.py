@@ -88,12 +88,13 @@ def load_and_forecast(json_name, NN_path):
     datasets_to_load = config["datasets"]
     train_split = config["train"]["train_split"]
     datasets_to_load["monash"] = ["electricity_hourly_dataset"]
+    # datasets_to_load["monash"] = ["solar_weekly_dataset"]
     datasets_to_load["finance"] = []
     datasets_to_load["energy"] = []
     datasets_to_load["science"] = []
     datasets_to_load["audio"] = []
     datasets_to_load["traffic"] = []
-    datasets_to_load["traffic"] = ["NOAA_dataset"]
+    datasets_to_load["weather"] = []
 
     print("Loading data...")
     (
@@ -171,8 +172,10 @@ def load_and_forecast(json_name, NN_path):
     #         masks.append(mask)
     ####################################
 
-    data_path = "../../TIME_opensource/final"
-    path = data_path + "/weather/NOAA/NOAA_weather.npz"
+    # data_path = "../../TIME_opensource/final"
+    data_path = "/home/tedwar42/data_tedwar42/final"
+    # path = data_path + "/weather/NOAA/NOAA_weather.npz"
+    path = data_path + "/weather/ERA5/ERA5.npz"
     weather_data = np.load(path)
 
     data_list = []
@@ -195,12 +198,15 @@ def load_and_forecast(json_name, NN_path):
     n_sequence = 365
     index = 5
     data_arr = torch.tensor(data_list[index]).to(device)
+    # data_arr = torch.tensor(batched_data[index, :]).to(device)
     data_to_forecast = torch.tensor(
         data_arr[:max_seq_length].unsqueeze(0), dtype=torch.float32
     ).to(device)
     data_to_forecast = torch.cat(
-        [data_to_forecast for _ in range(256)], dim=0
+        [data_to_forecast for _ in range(128)], dim=0
     ).unsqueeze(-1)
+    # )
+    print(data_to_forecast.shape)
 
     # print(data_to_forecast)
     # print(data_arr.shape, data_to_forecast.shape)
@@ -220,7 +226,8 @@ def load_and_forecast(json_name, NN_path):
     print(mean.shape, std.shape, forecast_xdim.shape)
 
     plt.figure(figsize=(10, 5))
-    plt.plot(data_arr.detach().cpu(), color="k", ls="-")
+    print(data_arr[:max_seq_length + n_sequence].detach().cpu().shape)
+    plt.plot(data_arr[:max_seq_length + n_sequence].detach().cpu(), color="k", ls="-")
     # for i in range(1, 256):
     #     plt.plot(
     #         forecast_xdim,
@@ -250,8 +257,17 @@ def load_and_forecast(json_name, NN_path):
 
 
 if __name__ == "__main__":
-    json_name = "results/parameterscaling_3825155_studentT_training.json"
-    NN_path = "results/parameterscaling_3825155_studentT_final.pt"
+    json_name = "results/aspectratio_1667971_1.0.json"
+    NN_path = "results/aspectratio_1667971_1.0_best.pt"
+
+    json_name = "results/maxLRscaling_18277379_0.00070711.json"
+    NN_path = "results/maxLRscaling_18277379_0.00070711_best.pt"
+
+
+    # json_name = "results/aspectratio_1775363_8.0.json"
+    # NN_path = "results/aspectratio_1775363_8.0_best.pt"
+
+
     # parameterscaling_21433347_studentT_best.pt
     # json_name = "results/parameterscaling_24451_studentT_training.json"
     # NN_path = "results/parameterscaling_24451_studentT_best.pt"
