@@ -8,6 +8,8 @@ import sys
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 
+plt.style.use("plots.mplstyle")
+
 cwd = os.getcwd()
 sys.path.insert(0, cwd + "/../timetransformers")
 
@@ -16,12 +18,9 @@ from data_handling import normalize_data, TimeSeriesDataset, load_datasets
 
 
 def load_and_forecast(json_name, NN_path):
-    device = torch.device(
-        "cuda"
-        if torch.cuda.is_available()
-        # else "mps" if torch.backends.mps.is_available() else "cpu"
-        else "cpu"
-    )
+
+    ####### LOAD MODEL #######
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using {device}")
 
     with open(json_name, "r") as file:
@@ -54,127 +53,12 @@ def load_and_forecast(json_name, NN_path):
 
     model_state = torch.load(NN_path, map_location=device)
     transformer.load_state_dict(model_state, strict=True)
-    # transformer.load_state_dict(torch.load(NN_path, map_location=torch.device("cpu")))
     transformer.to(device)
     transformer.eval()
 
-    ######################################
-    # test = 0
-    # end_test = 5
-    # total_MSE_test_loss = 0
-    # total_test_samples = 0
-    # for batch in train_dataloader:
-    #     train, true, mask = batch
-    #     current_batch_size = train.shape[0]
-    #     batched_data = train.to(device)
-    #     batched_data_true = true.to(device)
-    #     output = transformer(batched_data)
-    #     test_loss_MSE = transformer.MSE(output, batched_data_true, mask=mask.to(device))
-    #     total_MSE_test_loss += test_loss_MSE.item() * current_batch_size
-    #     test += 1
-    #     total_test_samples += current_batch_size
-    #     if test == end_test:
-    #         break
+    ####### LOAD DATA #######
 
-    # average_MSE_test_loss = total_MSE_test_loss / total_test_samples
-    # # plt.plot(train[0, :, 0].detach().cpu())
-    # # plt.plot(true[0, :].detach().cpu())
-    # # plt.show()
-    # # quit()
-    # print("Test loss: ", average_MSE_test_loss)
-    # quit()
-
-    batch_size = config["train"]["batch_size"]
-    datasets_to_load = config["datasets"]
-    train_split = config["train"]["train_split"]
-    datasets_to_load["monash"] = ["electricity_hourly_dataset"]
-    # datasets_to_load["monash"] = ["solar_weekly_dataset"]
-    datasets_to_load["finance"] = []
-    datasets_to_load["energy"] = []
-    datasets_to_load["science"] = []
-    datasets_to_load["audio"] = []
-    datasets_to_load["traffic"] = []
-    datasets_to_load["weather"] = []
-
-    print("Loading data...")
-    (
-        training_data_list,
-        test_data_list,
-        train_masks,
-        test_masks,
-    ) = load_datasets(datasets_to_load, train_split)
-
-    train_dataset = TimeSeriesDataset(training_data_list, max_seq_length, train_masks)
-    train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-    print("Training dataset size: ", train_dataset.__len__())
-    print("Total number of training tokens:", train_dataset.total_length())
-
-    for batch in train_dataloader:
-        train, true, mask = batch
-        break
-
-    batched_data = train.to(device)
-    batched_data_true = true.to(device)
-    output = transformer(batched_data)
-    print("evaluating model")
-
-    index = 0
-    x_train = np.arange(max_seq_length)
-    x_true = np.arange(1, max_seq_length + 1)
-    plt.figure(figsize=(10, 5))
-    plt.plot(
-        x_true,
-        batched_data_true[index, :].detach().cpu(),
-        zorder=20,
-        color="k",
-        label="True",
-    )
-    # plt.plot(
-    #     x_train,
-    #     batched_data[index, :].detach().cpu(),
-    #     zorder=20,
-    #     color="r",
-    #     ls="--",
-    #     label="Input data",
-    # )
-    mean = output[index, :, 0].detach().cpu()
-    std = torch.sqrt(torch.nn.functional.softplus(output[index, :, 1].detach().cpu()))
-    plt.plot(x_true, mean, color="r", label="Best model")
-    plt.fill_between(x_true, mean - std, mean + std, alpha=0.5, color="r")
-    plt.legend()
-    plt.savefig(f"plots/insequence_forecast_{num_params}.pdf", bbox_inches="tight")
-    # quit()
-    # plt.show()
-
-    ################ Now lets forecast ################
-
-    # ####################################
-    # import glob
-
-    # energy_paths = data_path + "/energy/"
-
-    # buildingbench_files = glob.glob(energy_paths + "*.npy")
-    # rnd_indices = np.random.choice(len(buildingbench_files), 2, replace=False)
-
-    # for rnd in tqdm(rnd_indices):
-    #     buildingbench_data = np.load(buildingbench_files[rnd])
-
-    #     for i in range(buildingbench_data.shape[0]):
-    #         current_ts = buildingbench_data[i]
-    #         new_data_length = current_ts.shape[0]
-    #         mask = np.ones(new_data_length)
-
-    #         # Need to append test and train masks
-    #         data_list.append(
-    #             normalize_data(current_ts, current_ts.mean(), current_ts.std())
-    #         )
-    #         # unnormalized_data.append(current_ts)
-    #         masks.append(mask)
-    ####################################
-
-    # data_path = "../../TIME_opensource/final"
-    data_path = "/home/tedwar42/data_tedwar42/final"
-    # path = data_path + "/weather/NOAA/NOAA_weather.npz"
+    data_path = "/Users/thomasedwards/Dropbox/Work/ML/TIME_opensource/final"
     path = data_path + "/weather/ERA5/ERA5.npz"
     weather_data = np.load(path)
 
@@ -195,53 +79,68 @@ def load_and_forecast(json_name, NN_path):
             )
             masks.append(mask)
 
-    n_sequence = 365
+    n_sequence = 10
+    total_length = max_seq_length + n_sequence
     index = 5
+    batch_size = 128
+
     data_arr = torch.tensor(data_list[index]).to(device)
-    # data_arr = torch.tensor(batched_data[index, :]).to(device)
     data_to_forecast = torch.tensor(
-        data_arr[:max_seq_length].unsqueeze(0), dtype=torch.float32
+        data_arr[:total_length].unsqueeze(0), dtype=torch.float32
     ).to(device)
-    data_to_forecast = torch.cat(
-        [data_to_forecast for _ in range(128)], dim=0
+    batched_forecast_data = torch.cat(
+        [data_to_forecast[:, :max_seq_length] for _ in range(batch_size)], dim=0
     ).unsqueeze(-1)
-    # )
-    print(data_to_forecast.shape)
 
-    # print(data_to_forecast)
-    # print(data_arr.shape, data_to_forecast.shape)
-    # quit()
-    # data_arr = batched_data[index]
-    # data_to_forecast = torch.tensor(
-    #     data_arr[:max_seq_length].unsqueeze(0), dtype=torch.float32
-    # ).to(device)
-    # data_to_forecast = torch.cat([data_to_forecast for _ in range(256)], dim=0)
-    # print(data_to_forecast)
-    # print(data_arr.shape, data_to_forecast.shape)
+    ####### FORECAST #######
 
-    forecast = transformer.generate(data_to_forecast, n_sequence)
+    output = transformer(batched_forecast_data)
+
+    mean = output[0, :, 0].detach().cpu()
+    std_insequence = torch.sqrt(
+        torch.nn.functional.softplus(output[0, :, 1].detach().cpu())
+    )
+
+    forecast = transformer.generate(batched_forecast_data, n_sequence)
     std = np.std(forecast[:, :].detach().cpu().numpy(), axis=0)[:, 0]
     median = np.median(forecast[:, :].detach().cpu().numpy(), axis=0)[:, 0]
-    forecast_xdim = np.arange(256, 256 + n_sequence)
-    print(mean.shape, std.shape, forecast_xdim.shape)
+    forecast_xdim = np.arange(max_seq_length, max_seq_length + n_sequence)
+
+    ####### PLOT EVERYTHING #######
 
     plt.figure(figsize=(10, 5))
-    print(data_arr[:max_seq_length + n_sequence].detach().cpu().shape)
-    plt.plot(data_arr[:max_seq_length + n_sequence].detach().cpu(), color="k", ls="-")
-    # for i in range(1, 256):
-    #     plt.plot(
-    #         forecast_xdim,
-    #         forecast[i].detach().cpu(),
-    #         color="k",
-    #         ls="-",
-    #         alpha=0.2,
-    #     )
+    x_total = np.arange(0, total_length)
+    x_seq = np.arange(0, max_seq_length)
+    plt.plot(
+        x_total,
+        data_to_forecast[0].detach().cpu(),
+        zorder=20,
+        color="k",
+        label="True",
+        alpha=0.2,
+    )
+    plt.axvline(x=max_seq_length, color="k", ls="--", label="Forecast")
+
+    plt.plot(x_seq, mean, color="C1", label="Best model")
+    plt.fill_between(
+        x_seq, mean - std_insequence, mean + std_insequence, alpha=0.5, color="C1"
+    )
+
+    for i in range(batch_size):
+        plt.plot(
+            forecast_xdim,
+            forecast[i].detach().cpu(),
+            color="C2",
+            ls="-",
+            alpha=0.01,
+        )
     plt.plot(
         forecast_xdim,
         median,
-        color="k",
+        color="C2",
         ls="-",
         alpha=0.3,
+        label="Forecast",
     )
     plt.fill_between(
         forecast_xdim,
@@ -250,26 +149,14 @@ def load_and_forecast(json_name, NN_path):
         color="k",
         alpha=0.3,
     )
-    plt.savefig(f"plots/forecast_{num_params}.pdf", bbox_inches="tight")
-    # plt.show()
+    # plt.savefig(f"plots/forecast_{num_params}.pdf", bbox_inches="tight")
+    plt.legend()
+    plt.show()
 
     return None
 
 
 if __name__ == "__main__":
-    json_name = "results/aspectratio_1667971_1.0.json"
-    NN_path = "results/aspectratio_1667971_1.0_best.pt"
-
     json_name = "results/maxLRscaling_18277379_0.00070711.json"
     NN_path = "results/maxLRscaling_18277379_0.00070711_best.pt"
-
-
-    # json_name = "results/aspectratio_1775363_8.0.json"
-    # NN_path = "results/aspectratio_1775363_8.0_best.pt"
-
-
-    # parameterscaling_21433347_studentT_best.pt
-    # json_name = "results/parameterscaling_24451_studentT_training.json"
-    # NN_path = "results/parameterscaling_24451_studentT_best.pt"
-
     load_and_forecast(json_name, NN_path)
