@@ -276,11 +276,11 @@ def train(config):
                         {"MSE_test_loss": average_MSE_test_loss, "step": step_counter}
                     )
 
-                MSE_test_losses.append(average_MSE_test_loss.item())
-                CRPS_test_losses.append(average_CRPS_test_loss.item())
-                test_losses.append(average_test_loss.item())
+                MSE_test_losses.append(average_MSE_test_loss)
+                CRPS_test_losses.append(average_CRPS_test_loss)
+                test_losses.append(average_test_loss)
                 test_steps.append(step_counter)
-                wandb.log({"test_loss": average_test_loss.item(), "step": step_counter})
+                wandb.log({"test_loss": average_test_loss, "step": step_counter})
 
                 if average_test_loss < min_loss:
                     torch.save(
