@@ -1,0 +1,19 @@
+#!/bin/bash -l
+
+#SBATCH -J 100M
+#SBATCH -t 96:00:00
+#SBATCH -p amper2
+#SBATCH --reservation=cosmicexplorer
+#SBATCH --nodes=1
+#SBATCH --gres=gpu:4
+#SBATCH --mail-type=BEGIN,END
+#SBATCH --mail-user=tedwards2412@gmail.com
+
+
+ml conda/0.1
+ml cuda/11.8
+conda activate time
+
+cd /cfs/home/thed7424/TimeTransformers/scripts
+
+python parameter_scaling_training_dataparallel.py configs/parameter_scaling/100M_studentT.yml

@@ -90,7 +90,7 @@ def train(config):
     if torch.cuda.device_count() > 1:
         print(f"Using {torch.cuda.device_count()} GPUs!")
         transformer = DataParallel(transformer)
-        num_workers = int(11 * torch.cuda.device_count())
+        num_workers = int(4 * torch.cuda.device_count())
 
     print("Number of workers: ", num_workers)
 
@@ -137,8 +137,9 @@ def train(config):
     # max_learning_rate = max(1e-4, 3.2e-3 - 2.0e-4 * np.log(num_params))
     # max_learning_rate = max(1e-4, 3.239e-3 - 1.7e-4 * np.log(num_params))
 
-    LR_func_params = np.loadtxt("fitted_function.txt")
-    max_learning_rate = LR_function(num_params, *LR_func_params)
+    # LR_func_params = np.loadtxt("fitted_function.txt")
+    # max_learning_rate = LR_function(num_params, *LR_func_params)
+    max_learning_rate = 0.0004
 
     print(f"Max learning rate: {max_learning_rate}")
     optimizer = optim.AdamW(transformer.parameters(), lr=max_learning_rate)
@@ -275,11 +276,11 @@ def train(config):
                         {"MSE_test_loss": average_MSE_test_loss, "step": step_counter}
                     )
 
-                MSE_test_losses.append(average_MSE_test_loss)
-                CRPS_test_losses.append(average_CRPS_test_loss)
-                test_losses.append(average_test_loss)
+                MSE_test_losses.append(average_MSE_test_loss.item())
+                CRPS_test_losses.append(average_CRPS_test_loss.item())
+                test_losses.append(average_test_loss.item())
                 test_steps.append(step_counter)
-                wandb.log({"test_loss": average_test_loss, "step": step_counter})
+                wandb.log({"test_loss": average_test_loss.item(), "step": step_counter})
 
                 if average_test_loss < min_loss:
                     torch.save(
