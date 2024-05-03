@@ -38,27 +38,29 @@ def max_LR_plot():
     maxLR_list = np.array(maxLR_list)
     divege_list = np.array(divege_list)
     CRPS_list = np.array(CRPS_list)
+    msize = 100
 
-    plt.figure(figsize=(7, 5))
+    plt.figure(figsize=(7, 4))
     cm = mpl.colormaps["RdYlBu_r"]
     sc = plt.scatter(
         maxLR_list[~divege_list],
         CRPS_list[~divege_list],
         c=N_list[~divege_list],
-        s=35,
+        s=msize,
         cmap=cm,
-        norm=LogNorm(vmin=10**5, vmax=10**7),
+        norm=LogNorm(vmin=10**5, vmax=3 * 10**7),
     )
+    print(N_list.min(), N_list.max())
     # plt.colorbar(sc, label="Number of Parameters")
 
     sc = plt.scatter(
         maxLR_list[divege_list],
         CRPS_list[divege_list],
         c=N_list[divege_list],
-        s=35,
+        s=msize,
         marker="x",
         cmap=cm,
-        norm=LogNorm(vmin=10**5, vmax=10**7),
+        norm=LogNorm(vmin=10**5, vmax=3 * 10**7),
     )
     plt.colorbar(sc, label="Number of Parameters")
 
@@ -72,5 +74,67 @@ def max_LR_plot():
     plt.savefig("plots/maxLR.pdf", bbox_inches="tight")
 
 
+def max_LR_plot_testloss():
+    json_files = glob.glob("results/maxLRscaling*.json")
+    print(len(json_files))
+    N_list = []
+    maxLR_list = []
+    test_losses = []
+    divege_list = []
+
+    for json_file in json_files:
+        # print(json_file)
+        with open(json_file, "r") as file:
+            data = json.load(file)
+
+        try:
+            divege_list.append(data["diverge"])
+        except:
+            continue
+        N_list.append(data["Nparams"])
+        maxLR_list.append(data["train"]["max_LR"])
+        test_losses.append(min(data["test_losses"]))
+
+    N_list = np.array(N_list)
+    maxLR_list = np.array(maxLR_list)
+    divege_list = np.array(divege_list)
+    test_losses = np.array(test_losses)
+    msize = 100
+
+    plt.figure(figsize=(7, 4))
+    cm = mpl.colormaps["RdYlBu_r"]
+    sc = plt.scatter(
+        maxLR_list[~divege_list],
+        test_losses[~divege_list],
+        c=N_list[~divege_list],
+        s=msize,
+        cmap=cm,
+        norm=LogNorm(vmin=10**5, vmax=3 * 10**7),
+    )
+    print(N_list.min(), N_list.max())
+    # plt.colorbar(sc, label="Number of Parameters")
+
+    sc = plt.scatter(
+        maxLR_list[divege_list],
+        test_losses[divege_list],
+        c=N_list[divege_list],
+        s=msize,
+        marker="x",
+        cmap=cm,
+        norm=LogNorm(vmin=10**5, vmax=3 * 10**7),
+    )
+    plt.colorbar(sc, label="Number of Parameters")
+
+    plt.xlabel("Maximum Learning Rate")
+    plt.ylabel("Minimum Test Loss")
+    plt.xscale("log")
+    # plt.yscale("log")
+    # plt.xlim(0.8, 1500)
+    plt.ylim(-2.0, 0.0)
+    # plt.show()
+    plt.savefig("plots/maxLR_testloss.pdf", bbox_inches="tight")
+
+
 if __name__ == "__main__":
     max_LR_plot()
+    max_LR_plot_testloss()

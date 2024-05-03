@@ -77,7 +77,7 @@ def train(config):
     ) = load_datasets(datasets_to_load, train_split)
 
     ################### Down sample the data
-    down_sampled = int(1/dataset_fraction)
+    down_sampled = int(1 / dataset_fraction)
     training_data_list = training_data_list[::down_sampled]
     train_masks = train_masks[::down_sampled]
     test_data_list = test_data_list[::down_sampled]
@@ -133,7 +133,9 @@ def train(config):
     # max_learning_rate = 0.003239 - 0.0001395 * np.log(num_params)
     # max_learning_rate = 3.2e-3 - 1.7e-4 * np.log(num_params)
     # max_learning_rate = max(1e-4, 3.2e-3 - 2.0e-4 * np.log(num_params))
-    max_learning_rate = max(1e-4, 3.239e-3 - 1.7e-4 * np.log(num_params))
+    # max_learning_rate = max(1e-4, 3.239e-3 - 1.7e-4 * np.log(num_params))
+
+    max_learning_rate = 0.0005698709893395885
     print(f"Max learning rate: {max_learning_rate}")
     optimizer = optim.AdamW(transformer.parameters(), lr=max_learning_rate)
     cosine_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
@@ -162,6 +164,7 @@ def train(config):
     test_steps = []
     test_losses = []
     MSE_test_losses = []
+    CRPS_test_losses = []
 
     min_loss = 1e10
     patience_counter = 0
@@ -186,7 +189,9 @@ def train(config):
             if loss_function == "Gaussian":
                 loss = transformer.Gaussian_loss(output, batched_data_true)
             elif loss_function == "studentT":
-                loss = transformer.studentT_loss(output, batched_data_true)
+                loss = transformer.studentT_loss(
+                    output, batched_data_true, mask=mask.to(device)
+                )
             elif loss_function == "MSE":
                 loss = transformer.MSE(output, batched_data_true)
 
@@ -206,6 +211,7 @@ def train(config):
                 transformer.eval()
                 total_test_loss = 0
                 total_MSE_test_loss = 0
+                total_CRPS_test_loss = 0
                 total_test_samples = 0
 
                 with torch.no_grad():  # Disable gradient calculation
@@ -220,22 +226,38 @@ def train(config):
                             test_loss = transformer.Gaussian_loss(
                                 output, batched_data_true
                             )
-                            test_loss_MSE = transformer.MSE(output, batched_data_true)
-                            total_MSE_test_loss += (
-                                test_loss_MSE.item() * current_batch_size
+                            # test_loss_MSE = transformer.MSE(output, batched_data_true)
+                            test_loss_CRPS = transformer.crps_student_t_approx(
+                                output, batched_data_true
+                            )
+                            # total_MSE_test_loss += (
+                            #     test_loss_MSE.item() * current_batch_size
+                            # )
+                            total_CRPS_test_loss += (
+                                test_loss_CRPS.item() * current_batch_size
                             )
 
                         if loss_function == "studentT":
                             test_loss = transformer.studentT_loss(
-                                output, batched_data_true
+                                output, batched_data_true, mask=mask.to(device)
                             )
-                            test_loss_MSE = transformer.MSE(output, batched_data_true)
+                            test_loss_MSE = transformer.MSE(
+                                output, batched_data_true, mask=mask.to(device)
+                            )
+                            test_loss_CRPS = transformer.crps_student_t_approx(
+                                output, batched_data_true, mask=mask.to(device)
+                            )
                             total_MSE_test_loss += (
                                 test_loss_MSE.item() * current_batch_size
                             )
+                            total_CRPS_test_loss += (
+                                test_loss_CRPS.item() * current_batch_size
+                            )
 
                         elif loss_function == "MSE":
-                            test_loss = transformer.MSE(output, batched_data_true)
+                            test_loss = transformer.MSE(
+                                output, batched_data_true, mask=mask.to(device)
+                            )
 
                         total_test_loss += test_loss.item() * current_batch_size
                         total_test_samples += current_batch_size
@@ -243,11 +265,16 @@ def train(config):
                 average_test_loss = total_test_loss / total_test_samples
                 if loss_function == "Gaussian" or loss_function == "studentT":
                     average_MSE_test_loss = total_MSE_test_loss / total_test_samples
+                    average_CRPS_test_loss = total_CRPS_test_loss / total_test_samples
+                    wandb.log(
+                        {"CRPS_test_loss": average_CRPS_test_loss, "step": step_counter}
+                    )
                     wandb.log(
                         {"MSE_test_loss": average_MSE_test_loss, "step": step_counter}
                     )
 
                 MSE_test_losses.append(average_MSE_test_loss)
+                CRPS_test_losses.append(average_CRPS_test_loss)
                 test_losses.append(average_test_loss)
                 test_steps.append(step_counter)
                 wandb.log({"test_loss": average_test_loss, "step": step_counter})
@@ -255,7 +282,7 @@ def train(config):
                 if average_test_loss < min_loss:
                     torch.save(
                         transformer.state_dict(),
-                        f"results/transformer_{num_params}_{loss_function}_{train_dataset.total_length()}_best_datascaling.pt",
+                        f"results/datascaling_{num_params}_{loss_function}_{train_dataset.total_length()}_best.pt",
                     )
 
                 # Early stopping
@@ -274,13 +301,14 @@ def train(config):
     pbar.close()
 
     # Finally, lets save the losses
-    file_name = f"results/transformer_{num_params}_{loss_function}_{train_dataset.total_length()}_training_datascaling.json"
-    model_file_name = f"results/transformer_{num_params}_{loss_function}_{train_dataset.total_length()}_final_datascaling.pt"
+    file_name = f"results/datascaling_{num_params}_{loss_function}_{train_dataset.total_length()}.json"
+    model_file_name = f"results/datascaling_{num_params}_{loss_function}_{train_dataset.total_length()}_final.pt"
     if loss_function == "Gaussian" or loss_function == "studentT":
         train_info = {
             "train_losses": train_losses,
             "train_epochs": train_steps,
             "test_losses": test_losses,
+            "CRPS_test_losses": CRPS_test_losses,
             "MSE_test_losses": MSE_test_losses,
             "test_epochs": test_steps,
             "model_file_name": f"{model_file_name}",
@@ -296,7 +324,7 @@ def train(config):
     print(f"Saving final model weights to {model_file_name}")
     torch.save(
         transformer.state_dict(),
-        f"{model_file_name}.pt",
+        f"{model_file_name}",
     )
 
     # Writing data to a JSON file
