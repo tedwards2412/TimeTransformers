@@ -1,10 +1,10 @@
 transformer:
   output_dim: 3
-  d_model: 256
-  num_heads: 1
+  d_model: 512
+  num_heads: 4
   num_layers: 12
-  d_ff: 256
-  dropout: 0.1
+  d_ff: 512
+  dropout: 0.0
   num_distribution_layers: 4
   loss_func: "studentT" # Should be Gaussian, MSE, or studentT
 
@@ -12,17 +12,17 @@ train:
   train_split: 0.95
   max_seq_length: 256
   batch_size: 512
-  test_batch_size: 16384
+  test_batch_size: 512
   total_training_steps: 100000
-  early_stopping: 3
+  early_stopping: 10
   warmup_steps: 3000
   evaluation_interval: 200
-  test_size: 0.05
+  test_size: 0.1
 
 datasets:
   dataset_fraction: 0.0005
-  monash:
-    - "electricity_hourly_dataset"
+  monash: # Total: 503,723,130
+    - "electricity_hourly_dataset" # 8,443,584 + 455,192,545
     - "traffic_hourly_dataset"
     - "traffic_weekly_dataset"
     - "solar_4_seconds_dataset"
@@ -31,7 +31,7 @@ datasets:
     - "wind_4_seconds_dataset"
     - "oikolab_weather_dataset"
     - "nn5_weekly_dataset"
-    - "nn5_daily_dataset_without_missing_values"
+    - "nn5_daily_dataset_with_missing_values"
     - "cif_2016_dataset"
     - "fred_md_dataset"
     - "hospital_dataset"
@@ -41,15 +41,22 @@ datasets:
     - "tourism_monthly_dataset"
     - "tourism_quarterly_dataset"
     - "elecdemand_dataset"
-    - "sunspot_dataset_without_missing_values"
-  weather:
+    - "sunspot_dataset_with_missing_values"
+    - "wind_farms_minutely_dataset_with_missing_values" 
+    - "london_smart_meters_dataset_with_missing_values" 
+    - "kaggle_web_traffic_dataset_with_missing_values"
+  weather: # Total: 1,565,432,018
     - "NOAA_dataset"
     - "ERA5_dataset"
-  finance:
+  finance: # 42,578,670
     - "yahoo"
   science:
-    - "ZTF"
-  audio:
-  - "arabic"
-  - "commands"
-  - "birds"
+    # - "ZTF"
+  audio: # 1,980,610,601
+    - "arabic"
+    - "commands"
+    - "birds"
+  energy: # 2,533,584,545
+    - "buildingbench"
+  traffic: # 1,507,545,600
+    - "CA"
