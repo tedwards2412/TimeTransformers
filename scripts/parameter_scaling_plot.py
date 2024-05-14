@@ -76,16 +76,17 @@ def parameter_losses_scaling_plot():
         return (x / a) ** b
 
     # Curve fitting
+    mask = parameter_count_list > 1e5
     params, covariance = curve_fit(
         power_law, parameter_count_list, min_test_loss, p0=[5.0, -1.0]
     )
 
     params_MSE, covariance_MSE = curve_fit(
-        power_law, parameter_count_list, min_MSE_test_loss, p0=[5.0, -1.0]
+        power_law, parameter_count_list[mask], min_MSE_test_loss[mask], p0=[5.0, -1.0]
     )
 
     params_CRPS, covariance_CRPS = curve_fit(
-        power_law, parameter_count_list, min_CRPS_test_loss, p0=[5.0, -1.0]
+        power_law, parameter_count_list[mask], min_CRPS_test_loss[mask], p0=[5.0, -1.0]
     )
 
     # Extracting the parameters
@@ -105,6 +106,7 @@ def parameter_losses_scaling_plot():
     print("Power law exponent: ", b_CRPS)
 
     N_arr = np.geomspace(1e3, 1e9)
+    N_arr_alt = np.geomspace(1e5, 1e9)
 
     fig, axes = plt.subplots(
         1,
@@ -113,17 +115,21 @@ def parameter_losses_scaling_plot():
     )
     plt.subplots_adjust(wspace=0.16)
     axes[0].scatter(parameter_count_list, min_MSE_test_loss, color="C2", s=100)
-    axes[0].loglog(N_arr, power_law(N_arr, a_MSE, b_MSE), ls="--", color="C0")
+    axes[0].loglog(
+        N_arr_alt, power_law(N_arr_alt, a_MSE, b_MSE), ls=(1, (5, 1)), color="C1"
+    )
     # axes[0].set_xlabel("Number of parameters")
-    axes[0].set_ylabel("In Sequence Test Loss")
+    axes[0].set_ylabel("In-sequence Test Loss")
     axes[0].set_title("MSE", fontweight="bold")
     axes[0].set_xlim(1e3, 1e9)
-    axes[0].set_ylim(0.06, 0.16)
-    axes[0].set_yticks([0.06, 0.08, 0.1, 0.12, 0.14, 0.16], minor=False)
-    axes[0].set_yticklabels(["0.06", "0.08", "0.10", "0.12", "0.14", "0.16"])
+    axes[0].set_ylim(0.06, 0.20)
+    axes[0].set_yticks([0.06, 0.08, 0.1, 0.12, 0.14, 0.17, 0.20], minor=False)
+    axes[0].set_yticklabels(["0.06", "0.08", "0.10", "0.12", "0.14", "0.17", "0.20"])
 
     axes[1].scatter(parameter_count_list, min_CRPS_test_loss, color="C2", s=100)
-    axes[1].loglog(N_arr, power_law(N_arr, a_CRPS, b_CRPS), ls="--", color="C0")
+    axes[1].loglog(
+        N_arr_alt, power_law(N_arr_alt, a_CRPS, b_CRPS), ls=(1, (5, 1)), color="C1"
+    )
     axes[1].set_title(f"CRPS")
     axes[1].set_yticks([0.06, 0.08, 0.1, 0.12, 0.14, 0.16], minor=False)
     axes[1].set_yticklabels(["0.06", "0.08", "0.10", "0.12", "0.14", "0.16"])
@@ -133,10 +139,10 @@ def parameter_losses_scaling_plot():
     # axes[1].set_ylim(0.04, 0.16)
 
     axes[2].scatter(parameter_count_list, min_test_loss, color="C2", s=100)
-    axes[2].loglog(N_arr, power_law(N_arr, a, b), ls="--", color="C0")
+    axes[2].loglog(N_arr, power_law(N_arr, a, b), ls=(1, (5, 1)), color="C1")
     # axes[2].set_xlabel("Number of parameters")
     # axes[2].set_ylabel("Minimum Test Loss + 2")
-    axes[2].set_title(f"Log Likelihood (+2)")
+    axes[2].set_title(f"Log-likelihood (+2)")
     axes[2].yaxis.set_minor_locator(NullLocator())
     axes[2].set_yticks([0.2, 0.4, 0.6, 0.8, 1.2, 1.6], minor=False)
     axes[2].set_yticklabels(["0.2", "0.4", "0.6", "0.8", "1.2", "1.6"])
