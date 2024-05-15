@@ -27,6 +27,8 @@ def train(config):
     with open(config, "r") as file:
         config = yaml.safe_load(file)
 
+    np.seed(1234)
+
     # Accessing the configuration values
     train_split = config["train"]["train_split"]
     max_seq_length = config["train"]["max_seq_length"]
@@ -83,8 +85,11 @@ def train(config):
     for i in range(len(training_data_list)):
         if int(len(training_data_list[i]) * dataset_fraction) > max_seq_length:
             end_index = int(len(training_data_list[i]) * dataset_fraction)
-            training_data_list[i] = training_data_list[i][:end_index]
-            train_masks[i] = train_masks[i][:end_index]
+            start_index = np.random.randint(0, end_index - 1)
+            end_index = start_index + end_index
+
+            training_data_list[i] = training_data_list[i][start_index:end_index]
+            train_masks[i] = train_masks[i][start_index:end_index]
         else:
             if np.random.rand() > dataset_fraction:
                 indicies_to_pop.append(i)
@@ -94,21 +99,21 @@ def train(config):
         training_data_list.pop(i)
         train_masks.pop(i)
 
-    indicies_to_pop = []
+    # indicies_to_pop = []
 
-    for i in range(len(test_data_list)):
-        if int(len(test_data_list[i]) * dataset_fraction) > max_seq_length:
-            end_index = int(len(test_data_list[i]) * dataset_fraction)
-            test_data_list[i] = test_data_list[i][:end_index]
-            test_masks[i] = test_masks[i][:end_index]
-        else:
-            if np.random.rand() > dataset_fraction:
-                indicies_to_pop.append(i)
+    # for i in range(len(test_data_list)):
+    #     if int(len(test_data_list[i]) * dataset_fraction) > max_seq_length:
+    #         end_index = int(len(test_data_list[i]) * dataset_fraction)
+    #         test_data_list[i] = test_data_list[i][:end_index]
+    #         test_masks[i] = test_masks[i][:end_index]
+    #     else:
+    #         if np.random.rand() > dataset_fraction:
+    #             indicies_to_pop.append(i)
 
-    while indicies_to_pop:
-        i = indicies_to_pop.pop()
-        test_data_list.pop(i)
-        test_masks.pop(i)
+    # while indicies_to_pop:
+    #     i = indicies_to_pop.pop()
+    #     test_data_list.pop(i)
+    #     test_masks.pop(i)
 
     # for i in tqdm(range(len(test_data_list))):
     #     if int(len(test_data_list[i]) * dataset_fraction) < max_seq_length:
