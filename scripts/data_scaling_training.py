@@ -159,7 +159,6 @@ def train(config):
     print(
         f"Total number of tokens after cutting: {total_number_of_tokens_after_cutting}"
     )
-    quit()
 
     # down_sampled = int(1 / dataset_fraction)
     # training_data_list = training_data_list[::down_sampled]
