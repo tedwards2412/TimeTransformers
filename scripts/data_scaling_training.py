@@ -99,6 +99,30 @@ def train(config):
         training_data_list.pop(i)
         train_masks.pop(i)
 
+    ###################
+    for data in training_data_list:
+        if len(data) < 1:
+            print(data, "Data is too short")
+
+    for masks in train_masks:
+        if np.sum(masks) == 0:
+            print(masks, "Mask is all zeros")
+    ###################
+    masks_to_pop = []
+
+    for i in range(len(training_data_list)):
+        if np.sum(train_masks[i]) == 0:
+            masks_to_pop.append(i)
+
+    while masks_to_pop:
+        i = masks_to_pop.pop()
+        training_data_list.pop(i)
+        train_masks.pop(i)
+
+    for masks in train_masks:
+        if np.sum(masks) == 0:
+            print(masks, "Mask is all zeros")
+
     # indicies_to_pop = []
 
     # for i in range(len(test_data_list)):
@@ -135,7 +159,7 @@ def train(config):
     print(
         f"Total number of tokens after cutting: {total_number_of_tokens_after_cutting}"
     )
-    # quit()
+    quit()
 
     # down_sampled = int(1 / dataset_fraction)
     # training_data_list = training_data_list[::down_sampled]
