@@ -27,7 +27,7 @@ def train(config):
     with open(config, "r") as file:
         config = yaml.safe_load(file)
 
-    np.seed(1234)
+    np.random.seed(1234)
 
     # Accessing the configuration values
     train_split = config["train"]["train_split"]
