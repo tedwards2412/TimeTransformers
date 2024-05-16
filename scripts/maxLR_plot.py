@@ -39,16 +39,17 @@ def max_LR_plot():
     divege_list = np.array(divege_list)
     CRPS_list = np.array(CRPS_list)
     msize = 100
+    model_sizes = np.unique(N_list)
 
     plt.figure(figsize=(7, 4))
-    cm = mpl.colormaps["RdYlBu_r"]
+    cm = mpl.colormaps["inferno_r"]
     sc = plt.scatter(
         maxLR_list[~divege_list],
         CRPS_list[~divege_list],
         c=N_list[~divege_list],
         s=msize,
         cmap=cm,
-        norm=LogNorm(vmin=10**5, vmax=3 * 10**7),
+        norm=LogNorm(vmin=10**4, vmax=3 * 10**7),
     )
     print(N_list.min(), N_list.max())
     # plt.colorbar(sc, label="Number of Parameters")
@@ -57,12 +58,36 @@ def max_LR_plot():
         maxLR_list[divege_list],
         CRPS_list[divege_list],
         c=N_list[divege_list],
-        s=msize,
+        s=msize / 3,
         marker="x",
         cmap=cm,
-        norm=LogNorm(vmin=10**5, vmax=3 * 10**7),
+        norm=LogNorm(vmin=10**4, vmax=3 * 10**7),
     )
     plt.colorbar(sc, label="Number of Parameters")
+
+    # for size in model_sizes:
+    #     mask = N_list[~divege_list] == size
+    #     plt.plot(
+    #         sorted(maxLR_list[mask]),
+    #         sorted(CRPS_list[mask], key=maxLR_list[mask]),
+    #         linestyle="-",
+    #         color=cm(LogNorm(vmin=10**5, vmax=3 * 10**7)(size)),
+    #         alpha=0.7,
+    #     )
+    for size in model_sizes:
+        mask = N_list[~divege_list] == size
+        maxLR_masked = maxLR_list[~divege_list][mask]
+        CRPS_masked = CRPS_list[~divege_list][mask]
+        sort_idx = np.argsort(maxLR_masked)
+        maxLR_sorted = maxLR_masked[sort_idx]
+        CRPS_sorted = CRPS_masked[sort_idx]
+        plt.plot(
+            maxLR_sorted,
+            CRPS_sorted,
+            linestyle="--",
+            color=cm(LogNorm(vmin=10**4, vmax=3 * 10**7)(size)),
+            alpha=0.7,
+        )
 
     plt.xlabel("Maximum Learning Rate")
     plt.ylabel("Minimum CRPS")
@@ -118,7 +143,7 @@ def max_LR_plot_testloss():
         maxLR_list[divege_list],
         test_losses[divege_list],
         c=N_list[divege_list],
-        s=msize,
+        s=msize / 2,
         marker="x",
         cmap=cm,
         norm=LogNorm(vmin=10**5, vmax=3 * 10**7),

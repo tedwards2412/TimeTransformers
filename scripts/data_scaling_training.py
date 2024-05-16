@@ -27,6 +27,8 @@ def train(config):
     with open(config, "r") as file:
         config = yaml.safe_load(file)
 
+    np.random.seed(1234)
+
     # Accessing the configuration values
     train_split = config["train"]["train_split"]
     max_seq_length = config["train"]["max_seq_length"]
@@ -63,7 +65,7 @@ def train(config):
     if device.type == "cuda":
         num_workers = 11
     elif device.type == "mps" or device.type == "cpu":
-        num_workers = 6
+        num_workers = 1
 
     print("Number of workers: ", num_workers)
 
@@ -77,11 +79,92 @@ def train(config):
     ) = load_datasets(datasets_to_load, train_split)
 
     ################### Down sample the data
-    down_sampled = int(1 / dataset_fraction)
-    training_data_list = training_data_list[::down_sampled]
-    train_masks = train_masks[::down_sampled]
-    test_data_list = test_data_list[::down_sampled]
-    test_masks = test_masks[::down_sampled]
+    total_number_of_tokens = sum([len(data) for data in training_data_list])
+    indicies_to_pop = []
+
+    for i in range(len(training_data_list)):
+        if int(len(training_data_list[i]) * dataset_fraction) > max_seq_length:
+            end_index = int(len(training_data_list[i]) * dataset_fraction)
+            start_index = np.random.randint(0, end_index - 1)
+            end_index = start_index + end_index
+
+            training_data_list[i] = training_data_list[i][start_index:end_index]
+            train_masks[i] = train_masks[i][start_index:end_index]
+        else:
+            if np.random.rand() > dataset_fraction:
+                indicies_to_pop.append(i)
+
+    while indicies_to_pop:
+        i = indicies_to_pop.pop()
+        training_data_list.pop(i)
+        train_masks.pop(i)
+
+    ###################
+    for data in training_data_list:
+        if len(data) < 1:
+            print(data, "Data is too short")
+
+    for masks in train_masks:
+        if np.sum(masks) == 0:
+            print(masks, "Mask is all zeros")
+    ###################
+    masks_to_pop = []
+
+    for i in range(len(training_data_list)):
+        if np.sum(train_masks[i]) == 0:
+            masks_to_pop.append(i)
+
+    while masks_to_pop:
+        i = masks_to_pop.pop()
+        training_data_list.pop(i)
+        train_masks.pop(i)
+
+    for masks in train_masks:
+        if np.sum(masks) == 0:
+            print(masks, "Mask is all zeros")
+
+    # indicies_to_pop = []
+
+    # for i in range(len(test_data_list)):
+    #     if int(len(test_data_list[i]) * dataset_fraction) > max_seq_length:
+    #         end_index = int(len(test_data_list[i]) * dataset_fraction)
+    #         test_data_list[i] = test_data_list[i][:end_index]
+    #         test_masks[i] = test_masks[i][:end_index]
+    #     else:
+    #         if np.random.rand() > dataset_fraction:
+    #             indicies_to_pop.append(i)
+
+    # while indicies_to_pop:
+    #     i = indicies_to_pop.pop()
+    #     test_data_list.pop(i)
+    #     test_masks.pop(i)
+
+    # for i in tqdm(range(len(test_data_list))):
+    #     if int(len(test_data_list[i]) * dataset_fraction) < max_seq_length:
+    #         end_index = max_seq_length
+    #     else:
+    #         end_index = int(len(test_data_list[i]) * dataset_fraction)
+    #     test_data_list[i] = test_data_list[i][:end_index]
+    #     test_masks[i] = test_masks[i][:end_index]
+
+    average_length_train = np.mean([len(data) for data in training_data_list])
+    average_length_test = np.mean([len(data) for data in test_data_list])
+    print(f"Average length of training data: {average_length_train}")
+    print(f"Average length of test data: {average_length_test}")
+
+    total_number_of_tokens_after_cutting = sum(
+        [len(data) for data in training_data_list]
+    )
+    print(f"Total number of tokens before cutting: {total_number_of_tokens}")
+    print(
+        f"Total number of tokens after cutting: {total_number_of_tokens_after_cutting}"
+    )
+
+    # down_sampled = int(1 / dataset_fraction)
+    # training_data_list = training_data_list[::down_sampled]
+    # train_masks = train_masks[::down_sampled]
+    # test_data_list = test_data_list[::down_sampled]
+    # test_masks = test_masks[::down_sampled]
     ###################
 
     train_dataset = TimeSeriesDataset(training_data_list, max_seq_length, train_masks)

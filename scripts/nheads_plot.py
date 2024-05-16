@@ -86,6 +86,7 @@ def nheads_aspectratio_combined():
     N_list2 = []
     AR_list = []
     CRPS_list2 = []
+    msize = 100
 
     for json_file in json_files:
         with open(json_file, "r") as file:
@@ -105,30 +106,35 @@ def nheads_aspectratio_combined():
     CRPS_list2 = np.array(CRPS_list2)
 
     # Create subplots
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5), sharey=True)
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 4), sharey=True)
     fig.subplots_adjust(wspace=0.05)
 
     # First subplot
-    cm = mpl.colormaps["RdYlBu_r"]
+    cm = mpl.colormaps["inferno_r"]
     sc1 = ax2.scatter(
-        nheads, CRPS_list, c=N_list, s=35, cmap=cm, norm=LogNorm(vmin=10**4, vmax=10**8)
+        nheads,
+        CRPS_list,
+        c=N_list,
+        s=msize,
+        cmap=cm,
+        norm=LogNorm(vmin=10**4, vmax=10**8),
     )
-    ax2.set_xlabel("Number of Heads")
+    ax2.set_xlabel("Number of Heads, $N_{\mathrm{heads}}$")
     ax2.set_xscale("log")
     ax2.set_xlim(0.8, 50)
-    ax2.set_ylim(0.08, 0.16)
+    ax2.set_ylim(0.08, 0.18)
 
     # Second subplot
     sc2 = ax1.scatter(
         AR_list,
         CRPS_list2,
         c=N_list2,
-        s=35,
+        s=msize,
         cmap=cm,
         norm=LogNorm(vmin=10**4, vmax=10**8),
     )
 
-    ax1.set_xlabel("Aspect Ratio ($\mathrm{d}_m/ \mathrm{N}_l$)")
+    ax1.set_xlabel("Aspect Ratio ($d_\mathrm{m}/ N_\mathrm{l}$)")
     ax1.set_xscale("log")
 
     # Adding colorbar and labels
